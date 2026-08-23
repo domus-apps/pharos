@@ -499,26 +499,27 @@ func drawSocialPreview(_ cg: CGContext, icon: CGImage) {
         text.draw(at: NSPoint(x: canvas.midX - text.size().width / 2, y: y))
     }
 
-    // Centered stack: icon, wordmark, tagline, feature pills
-    cg.draw(icon, in: CGRect(x: canvas.midX - 110, y: 350, width: 220, height: 220))
+    // Centered stack: icon, wordmark, tagline, feature pills — sized up so
+    // the card stays legible at the small sizes link previews render at.
+    cg.draw(icon, in: CGRect(x: canvas.midX - 125, y: 355, width: 250, height: 250))
 
     drawCentered(
         NSAttributedString(string: "Pharos", attributes: [
-            .font: NSFont.systemFont(ofSize: 88, weight: .bold),
+            .font: NSFont.systemFont(ofSize: 100, weight: .bold),
             .foregroundColor: NSColor.white,
-        ]), y: 230)
+        ]), y: 238)
 
     drawCentered(
         NSAttributedString(string: tagline, attributes: [
-            .font: NSFont.systemFont(ofSize: 32, weight: .medium),
+            .font: NSFont.systemFont(ofSize: 38, weight: .medium),
             .foregroundColor: taglineColor,
-        ]), y: 172)
+        ]), y: 176)
 
     let gap: CGFloat = 16
-    let widths = pillLabels.map { pillWidth(label: $0, fontSize: 26, pad: 20) }
+    let widths = pillLabels.map { pillWidth(label: $0, fontSize: 30, pad: 24) }
     var x = canvas.midX - (widths.reduce(0, +) + gap * CGFloat(pillLabels.count - 1)) / 2
     for (label, width) in zip(pillLabels, widths) {
-        drawPill(cg, x: x, y: 78, height: 56, label: label, fontSize: 26, pad: 20)
+        drawPill(cg, x: x, y: 82, height: 62, label: label, fontSize: 30, pad: 24)
         x += width + gap
     }
 }
@@ -553,10 +554,9 @@ let banner = makeBitmap(1800, 600)
 withContext(banner) { drawBanner($0, icon: bannerIcon) }
 savePNG(banner, "Assets/banner.png")
 
-// GitHub social preview: 2:1 aspect, rendered @2x for retina crispness.
-let og = makeBitmap(2560, 1280)
+// GitHub social preview: exactly 1280x640, GitHub's recommended size.
+let og = makeBitmap(1280, 640)
 withContext(og) { cg in
-    cg.scaleBy(x: 2, y: 2)
     drawSocialPreview(cg, icon: bannerIcon)
 }
 savePNG(og, "Assets/og-image.png")
