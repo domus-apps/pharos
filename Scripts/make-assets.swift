@@ -13,6 +13,7 @@
 
 import AppKit
 import CoreImage
+import SwiftUI
 
 // MARK: - Helpers
 
@@ -64,20 +65,12 @@ func radialBlob(_ cg: CGContext, center: CGPoint, radius: CGFloat, color c: CGCo
     cg.drawRadialGradient(grad, startCenter: center, startRadius: 0, endCenter: center, endRadius: radius, options: [])
 }
 
-/// Continuous-curvature squircle (superellipse), the Apple icon silhouette.
-func squircle(in rect: CGRect, exponent n: CGFloat = 4.6) -> CGPath {
-    let path = CGMutablePath()
-    let a = rect.width / 2, b = rect.height / 2
-    let steps = 720
-    for i in 0...steps {
-        let t = CGFloat(i) / CGFloat(steps) * 2 * .pi
-        let ct = cos(t), st = sin(t)
-        let x = rect.midX + a * (ct < 0 ? -1 : 1) * pow(abs(ct), 2 / n)
-        let y = rect.midY + b * (st < 0 ? -1 : 1) * pow(abs(st), 2 / n)
-        i == 0 ? path.move(to: CGPoint(x: x, y: y)) : path.addLine(to: CGPoint(x: x, y: y))
-    }
-    path.closeSubpath()
-    return path
+/// The macOS app-icon silhouette: a continuous-corner rounded rect (straight
+/// edges, Apple's smooth corner curve) — not a superellipse, whose sides
+/// bulge. Radius fitted against the system's live icon mask (measured from
+/// Calculator/Notes/Finder at 1024px: 214.5px on the 824px shape, ~0.16px RMS).
+func squircle(in rect: CGRect) -> CGPath {
+    Path(roundedRect: rect, cornerRadius: rect.width * (214.5 / 824), style: .continuous).cgPath
 }
 
 /// Convex polygon with rounded corners (for the tapered lighthouse tower).
