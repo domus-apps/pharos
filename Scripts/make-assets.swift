@@ -434,7 +434,7 @@ func drawBanner(_ cg: CGContext, icon: CGImage) {
     // Same dark navy as the siblings' banners: one family, three accents.
     linearGradient(
         cg, in: frame,
-        colors: [color(0x14213F), color(0x0A1128)],
+        colors: [color(0x1E1844), color(0x0F0B26)],
         from: CGPoint(x: canvas.midX, y: canvas.maxY), to: CGPoint(x: canvas.midX, y: canvas.minY)
     )
 
@@ -478,7 +478,7 @@ func drawSocialPreview(_ cg: CGContext, icon: CGImage) {
     // corners itself, so transparent corners would show through as white.
     linearGradient(
         cg, in: CGPath(rect: canvas, transform: nil),
-        colors: [color(0x16244A), color(0x0A1128)],
+        colors: [color(0x241D52), color(0x0F0B26)],
         from: CGPoint(x: canvas.midX, y: canvas.maxY), to: CGPoint(x: canvas.midX, y: canvas.minY)
     )
 
