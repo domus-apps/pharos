@@ -17,9 +17,10 @@ dies with it, so the Mac can never get stuck awake.
 - **Left-click** the menu bar beacon to toggle. The icon fills while active.
 - **Right-click** (or ⌃-click) for the menu: a **Keep Awake For** timer (30 minutes to
   8 hours, with an "Off in …" countdown), Settings, and Quit.
-- By default only *system* sleep is prevented — the display may still dim and lock. The
-  **Also keep the display awake** setting switches to the display assertion, which prevents
-  both. Flipping it takes effect immediately, even while active.
+- By default the display is kept awake too — a dark, locked screen looks asleep even when
+  the system isn't. Turning **Also keep the display awake** off switches to the
+  system-sleep-only assertion, letting the display dim and lock while the Mac stays awake.
+  Flipping it takes effect immediately, even while active.
 
 ## Settings
 

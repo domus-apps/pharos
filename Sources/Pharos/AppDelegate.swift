@@ -102,8 +102,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func updateStatusIcon() {
+        let style = AppPreferences.menuBarIconStyle
         statusItem?.button?.image = NSImage(
-            systemSymbolName: sleepGuard.isActive ? "light.beacon.max.fill" : "light.beacon.min",
+            systemSymbolName: sleepGuard.isActive
+                ? style.activeSymbolName : style.idleSymbolName,
             accessibilityDescription: sleepGuard.isActive
                 ? "Pharos — keeping the Mac awake" : "Pharos"
         )
@@ -211,6 +213,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         ) { [weak self] _ in
             guard let self else { return }
             self.updateStatusItemVisibility()
+            self.updateStatusIcon()
             /* Flipping "keep display awake" while active swaps the assertion
                type in place; the expiry timer is untouched. */
             if self.sleepGuard.isActive {

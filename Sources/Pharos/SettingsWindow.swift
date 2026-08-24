@@ -252,6 +252,22 @@ final class GeneralPaneViewController: NSViewController {
         checkboxWithTitle: "Hide menu bar icon", target: self,
         action: #selector(toggleHideMenuBarIcon))
 
+    /* Each item shows the style's active (filled) symbol next to its name;
+       the selection maps back through representedObject. */
+    private lazy var iconStylePopUp: NSPopUpButton = {
+        let popUp = NSPopUpButton()
+        for style in MenuBarIconStyle.allCases {
+            let item = NSMenuItem(title: style.title, action: nil, keyEquivalent: "")
+            item.image = NSImage(
+                systemSymbolName: style.activeSymbolName, accessibilityDescription: nil)
+            item.representedObject = style
+            popUp.menu?.addItem(item)
+        }
+        popUp.target = self
+        popUp.action = #selector(changeIconStyle)
+        return popUp
+    }()
+
     /* SMAppService needs a real app bundle; a bare `swift run` binary has no
        bundle identifier to register. */
     private var isBundledApp: Bool {
@@ -282,6 +298,15 @@ final class GeneralPaneViewController: NSViewController {
         views.append(note(
             "Off: only system sleep is prevented — the display may still dim and lock. "
                 + "Takes effect immediately, even while active."))
+
+        let currentStyle = AppPreferences.menuBarIconStyle
+        iconStylePopUp.selectItem(
+            at: MenuBarIconStyle.allCases.firstIndex(of: currentStyle) ?? 0)
+        let iconStyleRow = NSStackView(views: [
+            NSTextField(labelWithString: "Menu bar icon:"), iconStylePopUp,
+        ])
+        iconStyleRow.orientation = .horizontal
+        views.append(iconStyleRow)
 
         hideMenuBarIconCheckbox.state = AppPreferences.isMenuBarIconHidden ? .on : .off
         views.append(hideMenuBarIconCheckbox)
@@ -317,6 +342,13 @@ final class GeneralPaneViewController: NSViewController {
 
     @objc private func toggleHideMenuBarIcon() {
         AppPreferences.isMenuBarIconHidden = hideMenuBarIconCheckbox.state == .on
+    }
+
+    @objc private func changeIconStyle() {
+        guard
+            let style = iconStylePopUp.selectedItem?.representedObject as? MenuBarIconStyle
+        else { return }
+        AppPreferences.menuBarIconStyle = style
     }
 
     @objc private func toggleLaunchAtLogin() {
