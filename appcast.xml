@@ -5,5 +5,24 @@
   <channel>
     <title>Pharos</title>
     <link>https://github.com/domus-apps/pharos</link>
+    <item>
+      <title>Pharos v1.0.0</title>
+      <link>https://github.com/domus-apps/pharos/releases/tag/v1.0.0</link>
+      <pubDate>Wed, 26 Aug 2026 12:45:48 +0000</pubDate>
+      <description><![CDATA[
+<ul>
+<li>Initial release: keep your Mac awake from the menu bar — left-click the beacon to toggle, right-click for timed presets (from 15 minutes to 8 hours) with a live countdown.</li>
+<li>Optionally keep the display awake too (on by default — a dark, locked screen is indistinguishable from a sleeping Mac), toggleable while active.</li>
+<li>Choose the menu bar icon style (beacon, sun, eye, or coffee cup), hide the icon entirely, start keeping the Mac awake at launch, and launch at login.</li>
+<li>Sparkle keeps the app up to date.</li>
+</ul>      ]]></description>
+      <sparkle:version>1</sparkle:version>
+      <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+      <enclosure
+        url="https://github.com/domus-apps/pharos/releases/download/v1.0.0/Pharos.zip"
+        sparkle:edSignature="VIlKk2XBTLoHjp7QL2ntWO/iLb2uOXwX8LQbvyw/bXC2frBUgZ3U3vdqkGUTJu72v2LwDzu63Rjyy7HhS6H2BA==" length="3308053"
+        type="application/octet-stream"/>
+    </item>
   </channel>
 </rss>
