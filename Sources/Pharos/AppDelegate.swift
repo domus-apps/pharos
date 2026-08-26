@@ -5,7 +5,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let updater = UpdaterController()
     private var statusItem: NSStatusItem?
     private var settingsWindowController: SettingsWindowController?
+    private var onboardingController: OnboardingWindowController?
     private var expiryDate: Date?
+
+    private static let onboardingCompletedKey = "onboarding.completed"
     private var expiryTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -16,9 +19,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if AppPreferences.activatesOnLaunch {
             setAwake(true)
         }
+        /* Completion is only recorded when onboarding is finished properly,
+           so an interrupted (or force-quit) run shows it again. */
+        if !UserDefaults.standard.bool(forKey: Self.onboardingCompletedKey)
+            || CommandLine.arguments.contains("--onboarding")
+        {
+            showOnboarding()
+        }
+
         if CommandLine.arguments.contains("--settings") {
             openSettings()
         }
+    }
+
+    private func showOnboarding() {
+        if onboardingController == nil {
+            onboardingController = OnboardingWindowController { [weak self] in
+                UserDefaults.standard.set(true, forKey: Self.onboardingCompletedKey)
+                self?.onboardingController = nil
+            }
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        onboardingController?.window?.makeKeyAndOrderFront(nil)
     }
 
     func applicationWillTerminate(_ notification: Notification) {
