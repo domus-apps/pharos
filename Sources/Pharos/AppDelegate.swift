@@ -2,6 +2,7 @@ import AppKit
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let sleepGuard = SleepGuard()
+    private let updater = UpdaterController()
     private var statusItem: NSStatusItem?
     private var settingsWindowController: SettingsWindowController?
     private var expiryDate: Date?
@@ -165,6 +166,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             title: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.target = self
         menu.addItem(settingsItem)
+        menu.addItem(updater.makeMenuItem())
         menu.addItem(.separator())
         menu.addItem(
             NSMenuItem(title: "Quit Pharos", action: #selector(quit), keyEquivalent: "q"))
@@ -189,6 +191,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             title: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.target = self
         appMenu.addItem(settingsItem)
+        appMenu.addItem(updater.makeMenuItem())
         appMenu.addItem(.separator())
         appMenu.addItem(
             NSMenuItem(
@@ -252,7 +255,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func openSettings() {
         if settingsWindowController == nil {
-            settingsWindowController = SettingsWindowController()
+            settingsWindowController = SettingsWindowController(updater: updater)
             if let window = settingsWindowController?.window {
                 NotificationCenter.default.addObserver(
                     forName: NSWindow.willCloseNotification, object: window, queue: .main
