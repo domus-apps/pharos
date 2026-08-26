@@ -24,5 +24,22 @@
         sparkle:edSignature="VIlKk2XBTLoHjp7QL2ntWO/iLb2uOXwX8LQbvyw/bXC2frBUgZ3U3vdqkGUTJu72v2LwDzu63Rjyy7HhS6H2BA==" length="3308053"
         type="application/octet-stream"/>
     </item>
+    <item>
+      <title>Pharos v1.1.0</title>
+      <link>https://github.com/domus-apps/pharos/releases/tag/v1.1.0</link>
+      <pubDate>Wed, 26 Aug 2026 13:21:46 +0000</pubDate>
+      <description><![CDATA[
+<h3>Added</h3>
+<ul>
+<li>First-run onboarding that introduces the menu bar toggle and the timed presets.</li>
+</ul>      ]]></description>
+      <sparkle:version>2</sparkle:version>
+      <sparkle:shortVersionString>1.1.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+      <enclosure
+        url="https://github.com/domus-apps/pharos/releases/download/v1.1.0/Pharos.zip"
+        sparkle:edSignature="DtwkyEJbzHSdri2N2L/mgY2XTzFFk9sO0LOcGhyCtHIYltx4jkcXJJ4Ps6KnLDsAE2z9yQ10qfDVfu9gAVHUCQ==" length="3320057"
+        type="application/octet-stream"/>
+    </item>
   </channel>
 </rss>
