@@ -4,6 +4,12 @@ All notable changes to Pharos are documented here. The release workflow publishe
 
 Keep each bullet on a single line: release notes render line breaks literally (both on GitHub and in the update dialog), so wrapped lines would break mid-sentence.
 
+## 1.1.0
+
+### Added
+
+- First-run onboarding that introduces the menu bar toggle and the timed presets.
+
 ## 1.0.0
 
 - Initial release: keep your Mac awake from the menu bar — left-click the beacon to toggle, right-click for timed presets (from 15 minutes to 8 hours) with a live countdown.
