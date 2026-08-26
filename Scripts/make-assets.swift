@@ -172,15 +172,15 @@ func drawGlassShape(
 // The glyph: a lighthouse — base slab, tapered tower, lantern room, and a
 // warm beacon sweeping both ways. The tower keeps the siblings' frosted
 // glass; the beams and beacon carry the warm accent (Transom's sun hues).
-let baseSlab = CGRect(x: 352, y: 204, width: 320, height: 64)
+let baseSlab = CGRect(x: 352, y: 220, width: 320, height: 64)
 let towerPoints = [
-    CGPoint(x: 392, y: 268), CGPoint(x: 632, y: 268),
-    CGPoint(x: 600, y: 618), CGPoint(x: 424, y: 618),
+    CGPoint(x: 392, y: 284), CGPoint(x: 632, y: 284),
+    CGPoint(x: 600, y: 634), CGPoint(x: 424, y: 634),
 ]
-let towerBounds = CGRect(x: 392, y: 268, width: 240, height: 350)
-let lantern = CGRect(x: 420, y: 618, width: 184, height: 96)
-let lanternCap = CGRect(x: 452, y: 714, width: 120, height: 32)
-let beaconCenter = CGPoint(x: 512, y: 666)
+let towerBounds = CGRect(x: 392, y: 284, width: 240, height: 350)
+let lantern = CGRect(x: 420, y: 634, width: 184, height: 96)
+let lanternCap = CGRect(x: 452, y: 730, width: 120, height: 32)
+let beaconCenter = CGPoint(x: 512, y: 682)
 
 /// The warm light, drawn on the background before any glass: two beams and
 /// a soft halo, so the frosted tower blurs *lit* air behind it.
@@ -244,7 +244,7 @@ func drawLanternRoom(_ cg: CGContext, backdrop: CGImage, boost: Bool) {
 /// the flat Icon Composer layers — like Oriel's content bars, flat and quiet.
 func drawTowerWindows(_ cg: CGContext) {
     cg.setFillColor(color(0x5240D8, 0.32))
-    for y in [CGFloat(500), 396] {
+    for y in [CGFloat(516), 412] {
         let slit = CGRect(x: 512 - 17, y: y - 27, width: 34, height: 54)
         cg.addPath(CGPath(roundedRect: slit, cornerWidth: 15, cornerHeight: 15, transform: nil))
     }
