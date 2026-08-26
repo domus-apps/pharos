@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="Assets/banner.png" alt="Pharos — One-click sleep prevention for macOS" />
+  <img src="Assets/banner.png" alt="Pharos — One-click sleep blocker for macOS" />
 </p>
 
 <p align="center">
-  A macOS menu bar app that keeps the Mac awake — one click on, one click off.<br />
+  A one-click sleep blocker for macOS — keep the Mac awake through downloads, builds, and presentations.<br />
   A single dependency-free Swift Package — builds with the <code>swift</code> CLI alone, no Xcode project required.
 </p>
 

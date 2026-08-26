@@ -386,7 +386,7 @@ func drawSparkles(_ cg: CGContext, _ sparkles: [(x: CGFloat, y: CGFloat, r: CGFl
 
 let pillLabelColor = NSColor(srgbRed: 0.85, green: 0.83, blue: 0.98, alpha: 1)
 let taglineColor = NSColor(srgbRed: 0.78, green: 0.75, blue: 0.95, alpha: 1)
-let tagline = "One-click sleep prevention for macOS"
+let tagline = "One-click sleep blocker for macOS"
 
 func pillText(_ label: String, fontSize: CGFloat) -> NSAttributedString {
     NSAttributedString(string: label, attributes: [
