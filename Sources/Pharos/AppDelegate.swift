@@ -12,6 +12,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var expiryTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        /* A translocated launch relaunches itself from the real bundle —
+           nothing else must start in this doomed instance. */
+        if TranslocationHealer.healIfNeeded() { return }
+
         setUpMainMenu()
         observePreferenceChanges()
         updateStatusItemVisibility()
