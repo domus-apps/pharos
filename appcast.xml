@@ -57,5 +57,22 @@
         sparkle:edSignature="K661MlyK4Lj8k9axFzjvGNxPvcFMEj6tRfiyqtkxPdOF7rXL9hhhM6i5Bcnkco5yNzRDQl9/b5kcLaRM6B1aBA==" length="3323209"
         type="application/octet-stream"/>
     </item>
+    <item>
+      <title>Pharos v1.1.2</title>
+      <link>https://github.com/domus-apps/pharos/releases/tag/v1.1.2</link>
+      <pubDate>Sun, 30 Aug 2026 01:38:50 +0000</pubDate>
+      <description><![CDATA[
+<h3>Added</h3>
+<ul>
+<li>Spotlight now finds the app by its Korean name and by what it does — 파로스, 잠자기 방지, and keep awake all match.</li>
+</ul>      ]]></description>
+      <sparkle:version>4</sparkle:version>
+      <sparkle:shortVersionString>1.1.2</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+      <enclosure
+        url="https://github.com/domus-apps/pharos/releases/download/v1.1.2/Pharos.zip"
+        sparkle:edSignature="v77LunxSbvbYtoKQgBWKZd6JiSmH2grOsRa2/0GZzoEX/ecmE2caurDIJBq9RAb0nTqWlUvBji8QZshQTHEICA==" length="3323316"
+        type="application/octet-stream"/>
+    </item>
   </channel>
 </rss>
