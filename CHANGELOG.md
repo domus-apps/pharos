@@ -4,6 +4,14 @@ All notable changes to Pharos are documented here. The release workflow publishe
 
 Keep each bullet on a single line: release notes render line breaks literally (both on GitHub and in the update dialog), so wrapped lines would break mid-sentence.
 
+## 1.2.0
+
+### Added
+
+- Locked Awake: cover every display in black and swallow input while background work keeps running — for stepping away; unlock with Touch ID or your account password after Return, Esc, or a click.
+- A global shortcut, ⇧⌘L by default, locks from anywhere; change it in the new Shortcuts pane in Settings.
+- The Accessibility permission the lock needs (to swallow shortcuts like ⌘Tab) is requested only the first time you lock — keeping the Mac awake still uses no permissions at all.
+
 ## 1.1.2
 
 ### Added
