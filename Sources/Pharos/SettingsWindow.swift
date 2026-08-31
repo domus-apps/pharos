@@ -1,21 +1,29 @@
 import AppKit
+import Carbon.HIToolbox
 import ServiceManagement
+
+extension Notification.Name {
+    static let shortcutRecordingBegan = Notification.Name("Pharos.RecordingBegan")
+    static let shortcutRecordingEnded = Notification.Name("Pharos.RecordingEnded")
+}
 
 // MARK: - Window
 
-/* One pane today; future panes slot in by extending this enum. */
 enum SettingsPane: Int, CaseIterable {
     case general
+    case shortcuts
 
     var title: String {
         switch self {
         case .general: "General"
+        case .shortcuts: "Shortcuts"
         }
     }
 
     var symbolName: String {
         switch self {
         case .general: "gearshape"
+        case .shortcuts: "keyboard"
         }
     }
 }
@@ -65,6 +73,7 @@ final class SettingsSplitViewController: NSSplitViewController {
     private let sidebar = SettingsSidebarViewController()
     private let paneContainer = NSViewController()
     private let generalPane: GeneralPaneViewController
+    private let shortcutsPane = ShortcutsPaneViewController()
     private var currentPane: NSViewController?
 
     init(updater: UpdaterController) {
@@ -94,6 +103,7 @@ final class SettingsSplitViewController: NSSplitViewController {
         let next: NSViewController =
             switch pane {
             case .general: generalPane
+            case .shortcuts: shortcutsPane
             }
         guard next !== currentPane else { return }
 
@@ -384,6 +394,141 @@ final class GeneralPaneViewController: NSViewController {
         } catch {
             launchAtLoginCheckbox.state = launchAtLoginCheckbox.state == .on ? .off : .on
             NSLog("Pharos: launch-at-login change failed: \(error)")
+        }
+    }
+}
+
+// MARK: - Shortcuts pane
+
+/* One shortcut today: the Locked Awake trigger. */
+final class ShortcutsPaneViewController: NSViewController {
+    private var recorderButton: ShortcutRecorderButton?
+
+    override func loadView() {
+        let grid = NSGridView()
+        grid.rowSpacing = 10
+        grid.columnSpacing = 16
+        /* Labels and buttons have different intrinsic heights; align their
+           text baselines (the standard look for label + control rows). */
+        grid.rowAlignment = .firstBaseline
+
+        let label = NSTextField(labelWithString: "Lock Screen & Keep Awake")
+        let button = ShortcutRecorderButton(spec: LockShortcutStore.spec)
+        button.onChange = { spec in
+            LockShortcutStore.spec = spec
+        }
+        recorderButton = button
+        grid.addRow(with: [label, button])
+        grid.column(at: 0).xPlacement = .trailing
+
+        let resetButton = NSButton(
+            title: "Reset to Default", target: self, action: #selector(resetToDefault))
+
+        let stack = NSStackView(views: [grid, resetButton])
+        stack.orientation = .vertical
+        stack.alignment = .centerX
+        stack.spacing = 16
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
+        let container = NSView()
+        container.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(
+                equalTo: container.safeAreaLayoutGuide.topAnchor, constant: 20),
+            stack.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            stack.bottomAnchor.constraint(
+                lessThanOrEqualTo: container.bottomAnchor, constant: -20),
+        ])
+        view = container
+    }
+
+    @objc private func resetToDefault() {
+        LockShortcutStore.reset()
+        recorderButton?.spec = LockShortcutStore.spec
+    }
+}
+
+// MARK: - Recorder button
+
+/* Click to record: the button captures the next key press with a local event
+   monitor. Esc cancels; combinations without ⌘/⌃/⌥ are rejected so plain
+   typing can't become a global shortcut. */
+final class ShortcutRecorderButton: NSButton {
+    var spec: ShortcutSpec {
+        didSet { title = spec.displayString }
+    }
+    var onChange: ((ShortcutSpec) -> Void)?
+
+    private var eventMonitor: Any?
+    private var isRecording = false
+
+    init(spec: ShortcutSpec) {
+        self.spec = spec
+        super.init(frame: .zero)
+        bezelStyle = .rounded
+        setButtonType(.momentaryPushIn)
+        title = spec.displayString
+        target = self
+        action = #selector(toggleRecording)
+        translatesAutoresizingMaskIntoConstraints = false
+        widthAnchor.constraint(greaterThanOrEqualToConstant: 140).isActive = true
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) is not supported")
+    }
+
+    @objc private func toggleRecording() {
+        isRecording ? finishRecording(with: nil) : beginRecording()
+    }
+
+    private func beginRecording() {
+        isRecording = true
+        title = "Type shortcut…"
+        NotificationCenter.default.post(name: .shortcutRecordingBegan, object: self)
+
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self else { return event }
+            if Int(event.keyCode) == kVK_Escape {
+                self.finishRecording(with: nil)
+                return nil
+            }
+            let modifiers = ShortcutSpec.carbonModifiers(from: event.modifierFlags)
+            let required = UInt32(cmdKey) | UInt32(controlKey) | UInt32(optionKey)
+            guard modifiers & required != 0 else {
+                NSSound.beep()
+                return nil
+            }
+            self.finishRecording(
+                with: ShortcutSpec(
+                    keyCode: UInt32(event.keyCode),
+                    carbonModifiers: modifiers,
+                    keyLabel: ShortcutSpec.keyLabel(for: event)
+                ))
+            return nil
+        }
+    }
+
+    private func finishRecording(with newSpec: ShortcutSpec?) {
+        if let eventMonitor {
+            NSEvent.removeMonitor(eventMonitor)
+            self.eventMonitor = nil
+        }
+        isRecording = false
+        if let newSpec {
+            spec = newSpec
+            onChange?(newSpec)
+        } else {
+            title = spec.displayString
+        }
+        NotificationCenter.default.post(name: .shortcutRecordingEnded, object: self)
+    }
+
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        super.viewWillMove(toWindow: newWindow)
+        if newWindow == nil, isRecording {
+            finishRecording(with: nil)
         }
     }
 }

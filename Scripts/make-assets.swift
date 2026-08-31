@@ -424,7 +424,7 @@ func drawPill(
     return pill.maxX
 }
 
-let pillLabels = ["One click", "30 min – 8 hr timers", "No permissions"]
+let pillLabels = ["One click", "30 min – 8 hr timers", "Locked Awake"]
 
 // MARK: - Banner (1800 x 600)
 

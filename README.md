@@ -11,16 +11,35 @@
 
 Pharos holds an IOKit power assertion (the same public API `caffeinate` uses) while active, so
 the Mac won't go to idle sleep — through long downloads, builds, presentations, or reading.
-No permissions, no entitlements, no private frameworks; if the process dies, the assertion
-dies with it, so the Mac can never get stuck awake.
+Keeping the Mac awake needs no permissions, no entitlements, no private frameworks; if the
+process dies, the assertion dies with it, so the Mac can never get stuck awake.
 
 - **Left-click** the menu bar beacon to toggle. The icon fills while active.
 - **Right-click** (or ⌃-click) for the menu: a **Keep Awake For** timer (30 minutes to
-  8 hours, with an "Off in …" countdown), Settings, and Quit.
+  8 hours, with an "Off in …" countdown), **Lock Screen & Keep Awake**, Settings, and Quit.
 - By default the display is kept awake too — a dark, locked screen looks asleep even when
   the system isn't. Turning **Also keep the display awake** off switches to the
   system-sleep-only assertion, letting the display dim and lock while the Mac stays awake.
   Flipping it takes effect immediately, even while active.
+
+## Locked Awake
+
+**Lock Screen & Keep Awake** (in the right-click menu) is for stepping away while background
+work — an AI session, a long build — keeps running: every display is covered in black, keyboard
+shortcuts and typing are swallowed, and the Mac stays awake behind the cover. Press Return or
+click anywhere, then unlock with Touch ID or your account password (the standard system
+prompt).
+
+This is the one Pharos feature that needs a permission: swallowing shortcuts like ⌘Tab
+requires an event tap, which macOS gates behind **Privacy & Security › Accessibility**. Pharos
+asks the first time you lock, and everything else works without it.
+
+> [!IMPORTANT]
+> Locked Awake is a privacy barrier against casual physical access, **not a security
+> boundary**. It cannot stop someone who can run commands on the machine (`pkill Pharos`
+> harmlessly drops the cover), post synthetic events through the Accessibility API, or reach
+> the Mac remotely. When real security matters, lock the session (⌃⌘Q) instead — Pharos keeps
+> the Mac awake behind the real lock screen too.
 
 ## Settings
 

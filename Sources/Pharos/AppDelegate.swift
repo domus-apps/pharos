@@ -2,6 +2,8 @@ import AppKit
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let sleepGuard = SleepGuard()
+    private let lockScreen = LockScreenController()
+    private let hotKeys = HotKeyCenter()
     private let updater = UpdaterController()
     private var statusItem: NSStatusItem?
     private var settingsWindowController: SettingsWindowController?
@@ -19,6 +21,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         setUpMainMenu()
         observePreferenceChanges()
         updateStatusItemVisibility()
+        lockScreen.onStateChange = { [weak self] in self?.updateStatusIcon() }
+        registerLockHotKey()
+        NotificationCenter.default.addObserver(
+            forName: LockShortcutStore.changed, object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.registerLockHotKey()
+        }
+        /* While the settings recorder is capturing, the registered hotkey
+           would swallow the very combination being recorded — release it
+           for the duration. */
+        NotificationCenter.default.addObserver(
+            forName: .shortcutRecordingBegan, object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.hotKeys.unregisterAll()
+        }
+        NotificationCenter.default.addObserver(
+            forName: .shortcutRecordingEnded, object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.registerLockHotKey()
+        }
 
         if AppPreferences.activatesOnLaunch {
             setAwake(true)
@@ -51,6 +73,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         /* The assertion dies with the process anyway; releasing explicitly
            just keeps `pmset -g assertions` tidy during a graceful quit. */
         sleepGuard.deactivate()
+        lockScreen.teardown()
     }
 
     /* Launching the app again while it's already running sends "reopen" to
@@ -129,6 +152,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func updateStatusIcon() {
+        /* The lock state trumps the style choice: whatever beacon the user
+           picked, a locked screen shows a lock. */
+        if lockScreen.isLocked {
+            statusItem?.button?.image = NSImage(
+                systemSymbolName: "lock.fill",
+                accessibilityDescription: "Pharos — screen locked, keeping the Mac awake")
+            return
+        }
         let style = AppPreferences.menuBarIconStyle
         statusItem?.button?.image = NSImage(
             systemSymbolName: sleepGuard.isActive
@@ -136,6 +167,51 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             accessibilityDescription: sleepGuard.isActive
                 ? "Pharos — keeping the Mac awake" : "Pharos"
         )
+    }
+
+    // MARK: - Locked Awake
+
+    private func registerLockHotKey() {
+        hotKeys.unregisterAll()
+        let spec = LockShortcutStore.spec
+        hotKeys.register(keyCode: spec.keyCode, modifiers: spec.carbonModifiers) {
+            [weak self] in
+            self?.lockScreenKeepingAwake()
+        }
+    }
+
+    @objc private func lockScreenKeepingAwake() {
+        guard LockScreenController.hasPermission else {
+            LockScreenController.promptForPermission()
+            showLockPermissionAlert()
+            return
+        }
+        if !lockScreen.lock() {
+            NSLog("Pharos: lock failed despite Accessibility permission")
+        }
+    }
+
+    /* Locking is the one Pharos feature that needs a permission (an active
+       event tap, to swallow every shortcut while the screen is covered) —
+       explain that at the moment it matters, not before. */
+    private func showLockPermissionAlert() {
+        let alert = NSAlert()
+        alert.messageText = "Locking needs Accessibility access"
+        alert.informativeText =
+            "To cover the screen, Pharos must swallow keyboard shortcuts like "
+            + "⌘Tab — macOS calls that capability Accessibility. Allow Pharos "
+            + "under Privacy & Security › Accessibility, then lock again. "
+            + "Everything else in Pharos keeps working without it."
+        alert.addButton(withTitle: "Open Privacy & Security Settings…")
+        alert.addButton(withTitle: "Cancel")
+        NSApp.activate(ignoringOtherApps: true)
+        if alert.runModal() == .alertFirstButtonReturn,
+            let url = URL(
+                string: "x-apple.systempreferences:com.apple.preference.security"
+                    + "?Privacy_Accessibility")
+        {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     @objc private func statusItemClicked() {
@@ -186,6 +262,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let durationsItem = NSMenuItem(title: "Keep Awake For", action: nil, keyEquivalent: "")
         durationsItem.submenu = durations
         menu.addItem(durationsItem)
+
+        menu.addItem(.separator())
+        let shortcut = LockShortcutStore.spec.menuKeyEquivalent
+        let lockItem = NSMenuItem(
+            title: "Lock Screen & Keep Awake", action: #selector(lockScreenKeepingAwake),
+            keyEquivalent: shortcut.key)
+        lockItem.keyEquivalentModifierMask = shortcut.modifiers
+        lockItem.target = self
+        menu.addItem(lockItem)
 
         menu.addItem(.separator())
         let settingsItem = NSMenuItem(
