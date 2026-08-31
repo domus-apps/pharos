@@ -74,5 +74,31 @@
         sparkle:edSignature="v77LunxSbvbYtoKQgBWKZd6JiSmH2grOsRa2/0GZzoEX/ecmE2caurDIJBq9RAb0nTqWlUvBji8QZshQTHEICA==" length="3323316"
         type="application/octet-stream"/>
     </item>
+    <item>
+      <title>Pharos v1.2.0</title>
+      <link>https://github.com/domus-apps/pharos/releases/tag/v1.2.0</link>
+      <pubDate>Mon, 31 Aug 2026 05:38:50 +0000</pubDate>
+      <description xml:lang="en"><![CDATA[
+<h3>Added</h3>
+<ul>
+<li>Locked Awake: cover every display in black and swallow input while background work keeps running — for stepping away; unlock with Touch ID or your account password after Return, Esc, or a click.</li>
+<li>A global shortcut, ⇧⌘L by default, locks from anywhere; change it in the new Shortcuts pane in Settings.</li>
+<li>The Accessibility permission the lock needs (to swallow shortcuts like ⌘Tab) is requested only the first time you lock — keeping the Mac awake still uses no permissions at all.</li>
+</ul>      ]]></description>
+      <description xml:lang="ko"><![CDATA[
+<h3>Added</h3>
+<ul>
+<li>Locked Awake: 백그라운드 작업은 계속 돌린 채 모든 디스플레이를 검게 덮고 입력을 차단합니다 — 자리를 비울 때를 위한 기능으로, Return·Esc·클릭 후 Touch ID나 계정 암호로 해제합니다.</li>
+<li>기본 단축키 ⇧⌘L로 어디서든 잠글 수 있고, 설정의 새 Shortcuts 패널에서 조합을 바꿀 수 있습니다.</li>
+<li>잠금 화면 차단에 필요한 손쉬운 사용(Accessibility) 권한은 이 기능을 처음 쓸 때만 요청합니다 — 잠자기 방지 자체는 여전히 아무 권한도 쓰지 않습니다.</li>
+</ul>      ]]></description>
+      <sparkle:version>5</sparkle:version>
+      <sparkle:shortVersionString>1.2.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+      <enclosure
+        url="https://github.com/domus-apps/pharos/releases/download/v1.2.0/Pharos.zip"
+        sparkle:edSignature="bKl5eNe1zUTHS04sYSFzqi7zbIPHCghpJZ5NDLkdCy4SERafsyoAL39MUF0PD1q9OXjUhO0Eh08yLHxSnZWaCA==" length="3357147"
+        type="application/octet-stream"/>
+    </item>
   </channel>
 </rss>
