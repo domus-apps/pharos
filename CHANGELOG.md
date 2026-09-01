@@ -4,6 +4,13 @@ All notable changes to Pharos are documented here. The release workflow publishe
 
 Keep each bullet on a single line: release notes render line breaks literally (both on GitHub and in the update dialog), so wrapped lines would break mid-sentence.
 
+## 1.2.1
+
+### Fixed
+
+- Unlocking could leave macOS's secure-input mode stuck with loginwindow, silently starving every key-listening app on the Mac (brightness keys, input-source switchers) until the screen was locked and unlocked again — the authentication context is now torn down explicitly, and if macOS still leaves the mode stuck, Pharos detects it and explains the gesture that clears it.
+- After unlocking, the lock shortcut (⇧⌘L by default) needed two presses to lock again — the lock's input shield was swallowing the shortcut's own release events, so the system believed it was still held down.
+
 ## 1.2.0
 
 ### Added
