@@ -100,5 +100,29 @@
         sparkle:edSignature="bKl5eNe1zUTHS04sYSFzqi7zbIPHCghpJZ5NDLkdCy4SERafsyoAL39MUF0PD1q9OXjUhO0Eh08yLHxSnZWaCA==" length="3357147"
         type="application/octet-stream"/>
     </item>
+    <item>
+      <title>Pharos v1.2.1</title>
+      <link>https://github.com/domus-apps/pharos/releases/tag/v1.2.1</link>
+      <pubDate>Tue, 01 Sep 2026 00:30:57 +0000</pubDate>
+      <description xml:lang="en"><![CDATA[
+<h3>Fixed</h3>
+<ul>
+<li>Unlocking could leave macOS's secure-input mode stuck with loginwindow, silently starving every key-listening app on the Mac (brightness keys, input-source switchers) until the screen was locked and unlocked again — the authentication context is now torn down explicitly, and if macOS still leaves the mode stuck, Pharos detects it and explains the gesture that clears it.</li>
+<li>After unlocking, the lock shortcut (⇧⌘L by default) needed two presses to lock again — the lock's input shield was swallowing the shortcut's own release events, so the system believed it was still held down.</li>
+</ul>      ]]></description>
+      <description xml:lang="ko"><![CDATA[
+<h3>Fixed</h3>
+<ul>
+<li>잠금 해제 후 macOS의 secure input 모드가 loginwindow에 걸린 채 풀리지 않아, 키 입력을 감지하는 모든 앱(밝기 키, 입력 소스 전환 등)이 화면을 다시 잠갔다 풀 때까지 조용히 멈출 수 있던 문제를 고쳤습니다 — 인증 컨텍스트를 명시적으로 정리하고, 그래도 걸려 있으면 Pharos가 감지해 해결 방법을 안내합니다.</li>
+<li>잠금 해제 후 잠금 단축키(기본 ⇧⌘L)를 두 번 눌러야 다시 잠기던 문제를 고쳤습니다 — 잠금 실드가 단축키 자신의 키 해제 이벤트까지 삼켜 시스템이 계속 눌린 상태로 인식했습니다.</li>
+</ul>      ]]></description>
+      <sparkle:version>6</sparkle:version>
+      <sparkle:shortVersionString>1.2.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+      <enclosure
+        url="https://github.com/domus-apps/pharos/releases/download/v1.2.1/Pharos.zip"
+        sparkle:edSignature="mFIE0T2x1g7LTxvfKPIvLioOUCV1Ck/S6z1T00wbfQoX0b2M5qGYFDGF9oTTEBCWMJgyGNRxXcsjlTEOLgaWDw==" length="3358644"
+        type="application/octet-stream"/>
+    </item>
   </channel>
 </rss>
