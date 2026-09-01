@@ -134,12 +134,18 @@ final class LockScreenController {
 
     private func startTap() -> Bool {
         guard eventTap == nil else { return true }
-        /* Keyboard and scroll only — mouse events stay live so clicks reach
+        /* Key-downs and scroll only — mouse events stay live so clicks reach
            the shields (which cover everything, so they can't reach anything
-           else). Return doubles as the authentication trigger. */
+           else). Return doubles as the authentication trigger.
+
+           Key-ups and flagsChanged deliberately pass through: they can't
+           input anything on their own (typing, ⌘Tab, ⌘Q are all key-downs),
+           and swallowing them eats the release tail of the very ⇧⌘L that
+           locked the screen — HIToolbox then believes the hot key is still
+           held, so the next press after unlock is ignored and the shortcut
+           needs two presses. */
         let mask =
-            (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue)
-            | (1 << CGEventType.flagsChanged.rawValue)
+            (1 << CGEventType.keyDown.rawValue)
             | (1 << CGEventType.scrollWheel.rawValue)
         let callback: CGEventTapCallBack = { _, type, event, context in
             guard let context else { return Unmanaged.passUnretained(event) }
@@ -169,6 +175,9 @@ final class LockScreenController {
         }
         if let eventTap {
             CGEvent.tapEnable(tap: eventTap, enable: false)
+            /* Actually release the tap — merely disabling it leaves a zombie
+               registration in the session's tap list for the app's lifetime. */
+            CFMachPortInvalidate(eventTap)
         }
         runLoopSource = nil
         eventTap = nil
@@ -230,14 +239,64 @@ final class LockScreenController {
     }
 
     private func finishAuthentication(unlocked: Bool) {
+        /* Invalidate explicitly, not just drop the reference: the password
+           sheet is serviced by loginwindow, which holds session-wide secure
+           input while it's up. A context torn down implicitly can leave that
+           claim stuck, and stuck secure input starves every keyboard event
+           tap on the machine (Transom, Keystone, Sill — and our own). */
+        authContext?.invalidate()
         authContext = nil
         isAuthenticating = false
+        watchForStuckSecureInput()
         guard isLocked else { return }
         if unlocked {
             unlock()
         } else {
             reassertShield()
         }
+    }
+
+    /* Secure input should release moments after the auth dialog closes. If
+       loginwindow still holds it well afterwards (a macOS bug the auth
+       dialog can trigger), every event tap in the session is silently dead —
+       tell the user the one gesture that clears it. Checked twice so a
+       slow-but-healthy release never alarms. */
+    private func watchForStuckSecureInput(attempt: Int = 0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + (attempt == 0 ? 4 : 8)) { [weak self] in
+            guard let self, !isLocked, !isAuthenticating else { return }
+            guard Self.loginwindowHoldsSecureInput() else { return }
+            guard attempt >= 1 else {
+                watchForStuckSecureInput(attempt: attempt + 1)
+                return
+            }
+            NSLog("Pharos: secure input is stuck with loginwindow after unlock")
+            let alert = NSAlert()
+            alert.messageText = "Keyboard monitoring is stuck"
+            alert.informativeText = """
+                macOS left its secure-input mode on after the unlock dialog, which \
+                blocks apps that listen for keys (brightness or input-source \
+                utilities, for example).
+
+                To clear it, lock the screen with Control-Command-Q and unlock it \
+                again.
+                """
+            alert.addButton(withTitle: "OK")
+            NSApp.activate(ignoringOtherApps: true)
+            alert.runModal()
+        }
+    }
+
+    /// True when secure input is engaged AND held by loginwindow while the
+    /// screen isn't actually locked — the signature of the stuck state (a
+    /// password field in some app also engages secure input, but under that
+    /// app's own pid).
+    private static func loginwindowHoldsSecureInput() -> Bool {
+        guard IsSecureEventInputEnabled() else { return false }
+        guard let session = CGSessionCopyCurrentDictionary() as? [String: Any],
+              let pid = session["kCGSSessionSecureInputPID"] as? Int
+        else { return false }
+        let holder = NSRunningApplication(processIdentifier: pid_t(pid))
+        return holder?.bundleIdentifier == "com.apple.loginwindow"
     }
 
     /* Raise the shields and restart the tap — after a failed auth, a wake,
