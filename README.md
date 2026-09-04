@@ -25,7 +25,7 @@ process dies, the assertion dies with it, so the Mac can never get stuck awake.
 ## Locked Awake
 
 **Lock Screen & Keep Awake** (in the right-click menu) is for stepping away while background
-work, an AI session, a long build, keeps running: every display is covered in black, keyboard
+work, an AI session, a long build, keeps running. Every display is covered in black, keyboard
 shortcuts and typing are swallowed, and the Mac stays awake behind the cover. Press Return or
 click anywhere, then unlock with Touch ID or your account password (the standard system
 prompt).
@@ -79,14 +79,14 @@ swift run                    # run once
 ### Manual test checklist
 
 1. `swift run` → the beacon icon appears in the menu bar.
-2. Left-click it: the icon fills, and `pmset -g assertions` lists
+2. Left-click it. The icon fills, and `pmset -g assertions` lists
    `PreventUserIdleSystemSleep` named "Pharos is keeping the Mac awake".
-3. Left-click again: the assertion disappears from `pmset -g assertions`.
-4. Right-click → **Keep Awake For** → 30 Minutes: the menu now shows "Off in 30 min",
+3. Left-click again. The assertion disappears from `pmset -g assertions`.
+4. Right-click → **Keep Awake For** → 30 Minutes. The menu now shows "Off in 30 min",
    counting down on each open.
-5. Toggle **Also keep the display awake** in Settings while active: the assertion in
+5. Toggle **Also keep the display awake** in Settings while active. The assertion in
    `pmset -g assertions` switches to `PreventUserIdleDisplaySleep` without a gap.
-6. Quit: the assertion is released (`pmset -g assertions` is clean).
+6. Quit. The assertion is released (`pmset -g assertions` is clean).
 
 ### Unit tests
 

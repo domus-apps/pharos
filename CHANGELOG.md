@@ -9,7 +9,7 @@ Keep each bullet on a single line: release notes render line breaks literally (b
 ### Fixed
 
 - Unlocking could leave macOS's secure-input mode stuck with loginwindow, silently starving every key-listening app on the Mac (brightness keys, input-source switchers) until the screen was locked and unlocked again. The authentication context is now torn down explicitly, and if macOS still leaves the mode stuck, Pharos detects it and explains the gesture that clears it.
-- After unlocking, the lock shortcut (⇧⌘L by default) needed two presses to lock again: the lock's input shield was swallowing the shortcut's own release events, so the system believed it was still held down.
+- After unlocking, the lock shortcut (⇧⌘L by default) needed two presses to lock again. The lock's input shield was swallowing the shortcut's own release events, so the system believed it was still held down.
 
 ## 1.2.0
 
@@ -17,7 +17,7 @@ Keep each bullet on a single line: release notes render line breaks literally (b
 
 - Locked Awake: cover every display in black and swallow input while background work keeps running, for stepping away. Unlock with Touch ID or your account password after Return, Esc, or a click.
 - A global shortcut, ⇧⌘L by default, locks from anywhere; change it in the new Shortcuts pane in Settings.
-- The Accessibility permission the lock needs (to swallow shortcuts like ⌘Tab) is requested only the first time you lock; keeping the Mac awake still uses no permissions at all.
+- The Accessibility permission the lock needs (to swallow shortcuts like ⌘Tab) is requested only the first time you lock. Keeping the Mac awake still uses no permissions at all.
 
 ## 1.1.2
 
