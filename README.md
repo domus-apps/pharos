@@ -118,3 +118,7 @@ Recommended reading order: `SleepGuard.swift` → `AppDelegate.setAwake`.
 - **Automatic activation rules** (while an app is running, while on AC power, while a
   display is connected).
 - **Release workflow** (GitHub Actions signing + notarization, same shape as Oriel's).
+
+## License
+
+MIT, see [LICENSE](LICENSE). Bundled third-party software and its licenses are listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
