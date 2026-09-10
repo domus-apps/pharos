@@ -174,5 +174,51 @@
         sparkle:edSignature="M18UNhNnx/2orel/kOqKs6NzOoMN4pE/BMuhtYpqDYCF2LTOL/jIDjf+aQbG2bm4SuEt9zwjJ7ivWSoxfVw8Cg==" length="3358733"
         type="application/octet-stream"/>
     </item>
+    <item>
+      <title>Pharos v1.2.3</title>
+      <link>https://github.com/domus-apps/pharos/releases/tag/v1.2.3</link>
+      <pubDate>Thu, 10 Sep 2026 05:23:35 +0000</pubDate>
+      <description xml:lang="en"><![CDATA[
+<h2>1.2.3</h2>
+<h3>Fixed</h3>
+<ul>
+<li>Closing Settings or the welcome window now returns you to the app you were using, so other apps' shortcuts keep working right away.</li>
+</ul>
+<h2>1.2.2</h2>
+<h3>Fixed</h3>
+<ul>
+<li>Fixed steady processor use that began once Settings had been opened and went on after the window was closed.</li>
+</ul>
+<h2>1.2.1</h2>
+<h3>Fixed</h3>
+<ul>
+<li>Unlocking could leave macOS's secure-input mode stuck with loginwindow, silently starving every key-listening app on the Mac (brightness keys, input-source switchers) until the screen was locked and unlocked again. The authentication context is now torn down explicitly, and if macOS still leaves the mode stuck, Pharos detects it and explains the gesture that clears it.</li>
+<li>After unlocking, the lock shortcut (⇧⌘L by default) needed two presses to lock again. The lock's input shield was swallowing the shortcut's own release events, so the system believed it was still held down.</li>
+</ul>      ]]></description>
+      <description xml:lang="ko"><![CDATA[
+<h2>1.2.3</h2>
+<h3>수정</h3>
+<ul>
+<li>설정 창이나 시작 안내 창을 닫으면 이전에 쓰던 앱으로 바로 돌아가, 다른 앱의 단축키가 곧바로 동작합니다.</li>
+</ul>
+<h2>1.2.2</h2>
+<h3>Fixed</h3>
+<ul>
+<li>설정 창을 한 번 열면 창을 닫은 뒤에도 CPU를 계속 사용하던 문제를 고쳤습니다.</li>
+</ul>
+<h2>1.2.1</h2>
+<h3>Fixed</h3>
+<ul>
+<li>잠금 해제 후 macOS의 secure input 모드가 loginwindow에 걸린 채 풀리지 않아, 키 입력을 감지하는 모든 앱(밝기 키, 입력 소스 전환 등)이 화면을 다시 잠갔다 풀 때까지 조용히 멈출 수 있던 문제를 고쳤습니다. 인증 컨텍스트를 명시적으로 정리하고, 그래도 걸려 있으면 Pharos가 감지해 해결 방법을 안내합니다.</li>
+<li>잠금 해제 후 잠금 단축키(기본 ⇧⌘L)를 두 번 눌러야 다시 잠기던 문제를 고쳤습니다. 잠금 실드가 단축키 자신의 키 해제 이벤트까지 삼켜 시스템이 계속 눌린 상태로 인식했습니다.</li>
+</ul>      ]]></description>
+      <sparkle:version>8</sparkle:version>
+      <sparkle:shortVersionString>1.2.3</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+      <enclosure
+        url="https://github.com/domus-apps/pharos/releases/download/v1.2.3/Pharos.zip"
+        sparkle:edSignature="ZneTb/+u2RCyYzvOtz2OhUbxKuO85TSWfbB1z2yquunrB6lEZhR6FPBBDPlmQWcRw067RdAvJjaBH/sUA79ABA==" length="3359863"
+        type="application/octet-stream"/>
+    </item>
   </channel>
 </rss>
