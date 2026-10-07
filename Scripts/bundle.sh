@@ -9,6 +9,10 @@ APP=build/Pharos.app
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp .build/release/Pharos "$APP/Contents/MacOS/Pharos"
+
+# Localizations: SwiftPM packs the .lproj string tables into a resource
+# bundle that Bundle.module finds inside Contents/Resources.
+cp -R .build/release/Pharos_Pharos.bundle "$APP/Contents/Resources/"
 cp Scripts/Info.plist "$APP/Contents/Info.plist"
 
 # Embed Sparkle.framework (auto-update). The binary references it via

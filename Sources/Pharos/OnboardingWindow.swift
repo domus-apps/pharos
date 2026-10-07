@@ -9,7 +9,7 @@ final class OnboardingWindowController: NSWindowController, NSWindowDelegate {
     private let onComplete: () -> Void
 
     private lazy var startButton = NSButton(
-        title: "Start Using Pharos", target: self, action: #selector(start))
+        title: L("Start Using Pharos"), target: self, action: #selector(start))
 
     init(onComplete: @escaping () -> Void) {
         self.onComplete = onComplete
@@ -41,14 +41,14 @@ final class OnboardingWindowController: NSWindowController, NSWindowDelegate {
     // MARK: - Content
 
     private func makeContent() -> NSView {
-        let title = NSTextField(labelWithString: "Welcome to Pharos")
+        let title = NSTextField(labelWithString: L("Welcome to Pharos"))
         title.font = .systemFont(ofSize: 30, weight: .bold)
 
         let intro = NSTextField(
-            wrappingLabelWithString:
+            wrappingLabelWithString: L(
                 "Pharos keeps your Mac awake from the menu bar. Click the beacon "
-                + "to toggle; right-click for timed presets — from 15 minutes to "
-                + "8 hours — with a live countdown.")
+                    + "to toggle; right-click for timed presets — from 30 minutes to "
+                    + "8 hours — with a live countdown."))
         intro.font = .systemFont(ofSize: 14)
         intro.textColor = .secondaryLabelColor
         intro.alignment = .center
@@ -62,7 +62,7 @@ final class OnboardingWindowController: NSWindowController, NSWindowDelegate {
         ])
 
         let hint = NSTextField(
-            labelWithString: "Left-click toggles · right-click opens timers and settings")
+            labelWithString: L("Left-click toggles · right-click opens timers and settings"))
         hint.font = .systemFont(ofSize: 14)
         hint.textColor = .secondaryLabelColor
 
@@ -172,9 +172,11 @@ private final class OnboardingIllustrationView: NSView {
                 ])
             label.draw(at: NSPoint(x: x, y: y))
         }
-        menuRow("Keep Mac Awake", y: menu.maxY - 24, checked: true, dimmed: false)
-        menuRow("Off in 1h 12m", y: menu.maxY - 44, checked: false, dimmed: true)
-        menuRow("Keep Awake For", y: menu.maxY - 64, checked: false, dimmed: false)
-        menuRow("Settings…", y: menu.maxY - 88, checked: false, dimmed: false)
+        menuRow(L("Keep Mac Awake"), y: menu.maxY - 24, checked: true, dimmed: false)
+        menuRow(
+            L("Off in %@", AwakeCountdown.remainingLabel(seconds: 72 * 60)),
+            y: menu.maxY - 44, checked: false, dimmed: true)
+        menuRow(L("Keep Awake For"), y: menu.maxY - 64, checked: false, dimmed: false)
+        menuRow(L("Settings…"), y: menu.maxY - 88, checked: false, dimmed: false)
     }
 }

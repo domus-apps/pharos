@@ -4,6 +4,26 @@ All notable changes to Pharos are documented here. The release workflow publishe
 
 Keep each bullet on a single line: release notes render line breaks literally (both on GitHub and in the update dialog), so wrapped lines would break mid-sentence.
 
+## 1.3.0
+
+### Added
+
+- Pharos is available in Korean. The menu, Settings, and welcome window follow the macOS language.
+- Settings shows a warning when another app is already using the lock shortcut.
+
+### Changed
+
+- Settings uses the system's grouped style, with section headers and rounded boxes like Xcode's settings.
+
+### Fixed
+
+- The locked screen could stop responding to clicks and keys, leaving no way to unlock it.
+- Pharos could be quit from the keyboard while the screen was locked, uncovering the screen.
+- Keys typed while the unlock dialog was opening could reach the app behind the locked screen.
+- A display connected while unlocking was left uncovered.
+- The first click on the locked screen sometimes did nothing.
+- A timed keep-awake ended late if the Mac had slept in the meantime.
+
 ## 1.2.5
 
 ### Fixed

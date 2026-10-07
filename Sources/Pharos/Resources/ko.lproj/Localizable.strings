@@ -1,0 +1,74 @@
+/* Pharos 한국어 — 영어 원문이 키입니다 (Localization.swift 참고) */
+
+/* 메뉴 */
+"Keep Mac Awake" = "Mac 잠자기 방지";
+"Off in %@" = "%@ 후 꺼짐";
+"Keep Awake For" = "잠자기 방지 시간";
+"30 Minutes" = "30분";
+"1 Hour" = "1시간";
+"2 Hours" = "2시간";
+"4 Hours" = "4시간";
+"8 Hours" = "8시간";
+"Lock Screen & Keep Awake" = "화면 잠그고 잠자기 방지";
+"Settings…" = "설정…";
+"Check for Updates…" = "업데이트 확인…";
+"Quit Pharos" = "Pharos 종료";
+"Window" = "윈도우";
+"Close Window" = "윈도우 닫기";
+"Minimize" = "축소";
+
+/* 남은 시간 */
+"%d min" = "%d분";
+"%d hr" = "%d시간";
+"%1$d hr %2$d min" = "%1$d시간 %2$d분";
+
+/* 상태 아이콘 접근성 */
+"Pharos — keeping the Mac awake" = "Pharos — 잠자기 방지 중";
+"Pharos — screen locked, keeping the Mac awake" = "Pharos — 화면 잠김, 잠자기 방지 중";
+
+/* 메뉴 막대 아이콘 모양 */
+"Beacon" = "등대";
+"Sun" = "해";
+"Eye" = "눈";
+"Coffee Cup" = "커피잔";
+
+/* 화면 잠금 */
+"Locked" = "잠김";
+"Press Return, Esc, or click — Touch ID or password to unlock" = "Return이나 Esc를 누르거나 클릭한 다음 Touch ID나 암호로 잠금을 해제합니다";
+"Locking needs Accessibility access" = "화면을 잠그려면 손쉬운 사용 권한이 필요합니다";
+"To cover the screen, Pharos must swallow keyboard shortcuts like ⌘Tab — macOS calls that capability Accessibility. Allow Pharos under Privacy & Security › Accessibility, then lock again. Everything else in Pharos keeps working without it." = "화면을 덮는 동안 Pharos는 ⌘Tab 같은 키보드 단축키를 가로채야 하고, macOS는 이 기능을 손쉬운 사용 권한으로 관리합니다. 개인정보 보호 및 보안 › 손쉬운 사용에서 Pharos를 허용한 다음 다시 잠가 주세요. 그 밖의 기능은 이 권한 없이도 그대로 동작합니다.";
+"Open Privacy & Security Settings…" = "개인정보 보호 및 보안 설정 열기…";
+"Cancel" = "취소";
+"Keyboard monitoring is stuck" = "키 입력 감지가 멈춰 있습니다";
+"macOS left its secure-input mode on after the unlock dialog, which blocks apps that listen for keys (brightness or input-source utilities, for example).\n\nTo clear it, lock the screen with Control-Command-Q and unlock it again." = "잠금 해제 창이 닫힌 뒤에도 macOS의 보안 입력 모드가 켜진 채 남아 있어, 키 입력을 감지하는 앱(밝기나 입력 소스 유틸리티 등)이 동작하지 않습니다.\n\nControl-Command-Q로 화면을 잠갔다가 다시 해제하면 풀립니다.";
+"OK" = "확인";
+
+/* 환영 화면 */
+"Welcome to Pharos" = "Pharos에 오신 것을 환영합니다";
+"Pharos keeps your Mac awake from the menu bar. Click the beacon to toggle; right-click for timed presets — from 30 minutes to 8 hours — with a live countdown." = "Pharos는 메뉴 막대에서 Mac이 잠자기에 들지 않게 합니다. 등대를 클릭하면 켜고 끌 수 있고, 오른쪽 클릭하면 30분부터 8시간까지 시간을 정해 남은 시간을 보며 켜 둘 수 있습니다.";
+"Left-click toggles · right-click opens timers and settings" = "클릭으로 켜고 끄기 · 오른쪽 클릭으로 타이머와 설정 열기";
+"Start Using Pharos" = "Pharos 시작하기";
+
+/* 설정 — 공통 */
+"General" = "일반";
+"Shortcuts" = "단축키";
+
+/* 설정 — 일반 */
+"Launch at login" = "로그인 시 실행";
+"Available in the bundled app only (Scripts/bundle.sh)." = "번들 앱에서만 사용할 수 있습니다 (Scripts/bundle.sh).";
+"Start keeping the Mac awake at launch" = "실행하면 바로 잠자기 방지 시작";
+"Also keep the display awake" = "디스플레이도 깨어 있게 유지";
+"When off, only system sleep is prevented, so the display may still dim and lock. Takes effect immediately, even while Pharos is keeping the Mac awake." = "끄면 시스템 잠자기만 막기 때문에 디스플레이는 어두워지거나 잠길 수 있습니다. 잠자기 방지 중에도 바로 적용됩니다.";
+"Menu Bar" = "메뉴 막대";
+"Menu bar icon" = "메뉴 막대 아이콘";
+"Hide menu bar icon" = "메뉴 막대 아이콘 숨기기";
+"While hidden, launch Pharos again to open Settings. The app appears in the Dock only while this window is open." = "숨긴 동안에는 Pharos를 다시 실행하면 설정이 열립니다. 이 창이 열려 있는 동안에만 앱이 Dock에 나타납니다.";
+"Updates" = "업데이트";
+"Version" = "버전";
+
+/* 설정 — 단축키 */
+"Global shortcut" = "전역 단축키";
+"Covers the screen and keeps the Mac awake, no matter which app is in front. Locking needs the Accessibility permission." = "어떤 앱이 앞에 있어도 화면을 덮고 Mac이 잠자기에 들지 않게 합니다. 잠그려면 손쉬운 사용 권한이 필요합니다.";
+"Reset to Default" = "기본값으로 재설정";
+"Another app is using this shortcut, so it won't lock the screen. Choose a different one." = "다른 앱이 이 단축키를 쓰고 있어 화면을 잠글 수 없습니다. 다른 단축키를 지정해 주세요.";
+"Type shortcut…" = "단축키 입력…";

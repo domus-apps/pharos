@@ -11,11 +11,11 @@ enum AwakeDuration: Int, CaseIterable {
 
     var title: String {
         switch self {
-        case .thirtyMinutes: "30 Minutes"
-        case .oneHour: "1 Hour"
-        case .twoHours: "2 Hours"
-        case .fourHours: "4 Hours"
-        case .eightHours: "8 Hours"
+        case .thirtyMinutes: L("30 Minutes")
+        case .oneHour: L("1 Hour")
+        case .twoHours: L("2 Hours")
+        case .fourHours: L("4 Hours")
+        case .eightHours: L("8 Hours")
         }
     }
 
@@ -31,9 +31,9 @@ enum AwakeCountdown {
         let h = minutes / 60
         let m = minutes % 60
         switch (h, m) {
-        case (0, _): return "\(m) min"
-        case (_, 0): return "\(h) hr"
-        default: return "\(h) hr \(m) min"
+        case (0, _): return L("%d min", m)
+        case (_, 0): return L("%d hr", h)
+        default: return L("%1$d hr %2$d min", h, m)
         }
     }
 }

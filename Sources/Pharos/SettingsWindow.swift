@@ -1,6 +1,8 @@
 import AppKit
 import Carbon.HIToolbox
+import Combine
 import ServiceManagement
+import SwiftUI
 
 extension Notification.Name {
     static let shortcutRecordingBegan = Notification.Name("Pharos.RecordingBegan")
@@ -15,8 +17,8 @@ enum SettingsPane: Int, CaseIterable {
 
     var title: String {
         switch self {
-        case .general: "General"
-        case .shortcuts: "Shortcuts"
+        case .general: L("General")
+        case .shortcuts: L("Shortcuts")
         }
     }
 
@@ -51,7 +53,7 @@ final class SettingsWindowController: NSWindowController {
         toolbar.displayMode = .iconOnly
         window.toolbar = toolbar
         window.isReleasedWhenClosed = false
-        window.setContentSize(NSSize(width: 640, height: 360))
+        window.setContentSize(NSSize(width: 640, height: 560))
         window.center()
 
         super.init(window: window)
@@ -94,12 +96,17 @@ final class SettingsSplitViewController: NSSplitViewController {
 
     private let sidebar = SettingsSidebarViewController()
     private let paneContainer = NSViewController()
-    private let generalPane: GeneralPaneViewController
-    private let shortcutsPane = ShortcutsPaneViewController()
+    private let generalPane: NSViewController
+    private let shortcutsPane: NSViewController
     private var currentPane: NSViewController?
 
     init(updater: UpdaterController) {
-        generalPane = GeneralPaneViewController(updater: updater)
+        /* The panes are SwiftUI grouped Forms — the exact section-header +
+           rounded-box arrangement Xcode's settings use — hosted inside the
+           AppKit split chrome. */
+        let model = SettingsModel(updater: updater)
+        generalPane = NSHostingController(rootView: GeneralSettingsView(model: model))
+        shortcutsPane = NSHostingController(rootView: ShortcutSettingsView(model: model))
         super.init(nibName: nil, bundle: nil)
 
         paneContainer.view = NSView()
@@ -275,206 +282,206 @@ final class SettingsSidebarViewController: NSViewController, NSTableViewDataSour
     }
 }
 
-// MARK: - General pane
+// MARK: - SwiftUI bridge
 
-final class GeneralPaneViewController: NSViewController {
-    private let updater: UpdaterController
+/* One shared model for both panes: preferences live in UserDefaults (via
+   AppPreferences and LockShortcutStore); this object just republishes
+   their change notifications so SwiftUI re-reads, and carries the pieces
+   that aren't preferences (SMAppService, the updater). */
+final class SettingsModel: ObservableObject {
+    let updater: UpdaterController
 
     init(updater: UpdaterController) {
         self.updater = updater
-        super.init(nibName: nil, bundle: nil)
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) is not supported")
-    }
-
-    private lazy var launchAtLoginCheckbox = NSButton(
-        checkboxWithTitle: "Launch at login", target: self,
-        action: #selector(toggleLaunchAtLogin))
-
-    private lazy var activateOnLaunchCheckbox = NSButton(
-        checkboxWithTitle: "Start keeping the Mac awake at launch", target: self,
-        action: #selector(toggleActivateOnLaunch))
-
-    private lazy var keepDisplayAwakeCheckbox = NSButton(
-        checkboxWithTitle: "Also keep the display awake", target: self,
-        action: #selector(toggleKeepDisplayAwake))
-
-    private lazy var hideMenuBarIconCheckbox = NSButton(
-        checkboxWithTitle: "Hide menu bar icon", target: self,
-        action: #selector(toggleHideMenuBarIcon))
-
-    /* Each item shows the style's active (filled) symbol next to its name;
-       the selection maps back through representedObject. */
-    private lazy var iconStylePopUp: NSPopUpButton = {
-        let popUp = NSPopUpButton()
-        for style in MenuBarIconStyle.allCases {
-            let item = NSMenuItem(title: style.title, action: nil, keyEquivalent: "")
-            item.image = NSImage(
-                systemSymbolName: style.activeSymbolName, accessibilityDescription: nil)
-            item.representedObject = style
-            popUp.menu?.addItem(item)
-        }
-        popUp.target = self
-        popUp.action = #selector(changeIconStyle)
-        return popUp
-    }()
-
-    /* SMAppService needs a real app bundle; a bare `swift run` binary has no
-       bundle identifier to register. */
-    private var isBundledApp: Bool {
-        Bundle.main.bundleIdentifier != nil
-    }
-
-    private func note(_ text: String) -> NSTextField {
-        let note = NSTextField(wrappingLabelWithString: text)
-        note.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
-        note.textColor = .secondaryLabelColor
-        return note
-    }
-
-    override func loadView() {
-        var views: [NSView] = [launchAtLoginCheckbox]
-        if isBundledApp {
-            launchAtLoginCheckbox.state = SMAppService.mainApp.status == .enabled ? .on : .off
-        } else {
-            launchAtLoginCheckbox.isEnabled = false
-            views.append(note("Available in the bundled app only (Scripts/bundle.sh)."))
-        }
-
-        activateOnLaunchCheckbox.state = AppPreferences.activatesOnLaunch ? .on : .off
-        views.append(activateOnLaunchCheckbox)
-
-        keepDisplayAwakeCheckbox.state = AppPreferences.keepsDisplayAwake ? .on : .off
-        views.append(keepDisplayAwakeCheckbox)
-        views.append(note(
-            "Off: only system sleep is prevented — the display may still dim and lock. "
-                + "Takes effect immediately, even while active."))
-
-        let currentStyle = AppPreferences.menuBarIconStyle
-        iconStylePopUp.selectItem(
-            at: MenuBarIconStyle.allCases.firstIndex(of: currentStyle) ?? 0)
-        let iconStyleRow = NSStackView(views: [
-            NSTextField(labelWithString: "Menu bar icon:"), iconStylePopUp,
-        ])
-        iconStyleRow.orientation = .horizontal
-        views.append(iconStyleRow)
-
-        hideMenuBarIconCheckbox.state = AppPreferences.isMenuBarIconHidden ? .on : .off
-        views.append(hideMenuBarIconCheckbox)
-        views.append(note(
-            "While hidden, launch Pharos again to open Settings. "
-                + "The app appears in the Dock only while this window is open."))
-
-        /* Updates. The menu bar icon (and its Check for Updates item) can be
-           hidden, so the settings window must offer the check too. */
-        views.append(updater.makeCheckButton())
-        let info = Bundle.main.infoDictionary
-        if let version = info?["CFBundleShortVersionString"] as? String {
-            let build = (info?["CFBundleVersion"] as? String).map { " (\($0))" } ?? ""
-            views.append(note("Version \(version)\(build)"))
-        }
-
-        let stack = NSStackView(views: views)
-        stack.orientation = .vertical
-        stack.alignment = .leading
-        stack.spacing = 8
-        stack.translatesAutoresizingMaskIntoConstraints = false
-
-        let container = NSView()
-        container.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(
-                equalTo: container.safeAreaLayoutGuide.topAnchor, constant: 20),
-            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 24),
-            stack.trailingAnchor.constraint(
-                lessThanOrEqualTo: container.trailingAnchor, constant: -24),
-        ])
-        view = container
-    }
-
-    @objc private func toggleActivateOnLaunch() {
-        AppPreferences.activatesOnLaunch = activateOnLaunchCheckbox.state == .on
-    }
-
-    @objc private func toggleKeepDisplayAwake() {
-        AppPreferences.keepsDisplayAwake = keepDisplayAwakeCheckbox.state == .on
-    }
-
-    @objc private func toggleHideMenuBarIcon() {
-        AppPreferences.isMenuBarIconHidden = hideMenuBarIconCheckbox.state == .on
-    }
-
-    @objc private func changeIconStyle() {
-        guard
-            let style = iconStylePopUp.selectedItem?.representedObject as? MenuBarIconStyle
-        else { return }
-        AppPreferences.menuBarIconStyle = style
-    }
-
-    @objc private func toggleLaunchAtLogin() {
-        do {
-            if launchAtLoginCheckbox.state == .on {
-                try SMAppService.mainApp.register()
-            } else {
-                try SMAppService.mainApp.unregister()
+        for name in [
+            AppPreferences.changed, LockShortcutStore.changed,
+            LockShortcutStore.registrationChanged,
+        ] {
+            NotificationCenter.default.addObserver(
+                forName: name, object: nil, queue: .main
+            ) { [weak self] _ in
+                self?.objectWillChange.send()
             }
-        } catch {
-            launchAtLoginCheckbox.state = launchAtLoginCheckbox.state == .on ? .off : .on
-            NSLog("Pharos: launch-at-login change failed: \(error)")
         }
+    }
+
+    /* SMAppService needs a real app bundle; a bare `swift run` binary has
+       no bundle identifier to register. */
+    var isBundledApp: Bool { Bundle.main.bundleIdentifier != nil }
+
+    var launchAtLogin: Bool {
+        get { SMAppService.mainApp.status == .enabled }
+        set {
+            do {
+                if newValue {
+                    try SMAppService.mainApp.register()
+                } else {
+                    try SMAppService.mainApp.unregister()
+                }
+            } catch {
+                NSLog("Pharos: launch-at-login change failed: \(error)")
+            }
+            objectWillChange.send()
+        }
+    }
+
+    var versionLabel: String {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "dev"
+        let build = (info?["CFBundleVersion"] as? String).map { " (\($0))" } ?? ""
+        return version + build
+    }
+
+    func binding<Value>(
+        _ get: @escaping () -> Value, _ set: @escaping (Value) -> Void
+    ) -> Binding<Value> {
+        Binding(get: get, set: set)
+    }
+}
+
+// MARK: - General pane
+
+struct GeneralSettingsView: View {
+    @ObservedObject var model: SettingsModel
+
+    var body: some View {
+        Form {
+            Section {
+                VStack(alignment: .leading, spacing: 3) {
+                    Toggle(
+                        L("Launch at login"),
+                        isOn: model.binding({ model.launchAtLogin }, { model.launchAtLogin = $0 })
+                    )
+                    .disabled(!model.isBundledApp)
+                    if !model.isBundledApp {
+                        Text(L("Available in the bundled app only (Scripts/bundle.sh)."))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Toggle(
+                    L("Start keeping the Mac awake at launch"),
+                    isOn: model.binding(
+                        { AppPreferences.activatesOnLaunch },
+                        { AppPreferences.activatesOnLaunch = $0 }))
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Toggle(
+                        L("Also keep the display awake"),
+                        isOn: model.binding(
+                            { AppPreferences.keepsDisplayAwake },
+                            { AppPreferences.keepsDisplayAwake = $0 }))
+                    Text(
+                        L(
+                            "When off, only system sleep is prevented, so the display may "
+                                + "still dim and lock. Takes effect immediately, even while "
+                                + "Pharos is keeping the Mac awake.")
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+            }
+
+            Section(L("Menu Bar")) {
+                /* Each choice shows the style's active (filled) symbol, the
+                   look the icon has while the Mac is kept awake. */
+                Picker(
+                    L("Menu bar icon"),
+                    selection: model.binding(
+                        { AppPreferences.menuBarIconStyle },
+                        { AppPreferences.menuBarIconStyle = $0 })
+                ) {
+                    ForEach(MenuBarIconStyle.allCases, id: \.self) { style in
+                        Label(style.title, systemImage: style.activeSymbolName).tag(style)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Toggle(
+                        L("Hide menu bar icon"),
+                        isOn: model.binding(
+                            { AppPreferences.isMenuBarIconHidden },
+                            { AppPreferences.isMenuBarIconHidden = $0 }))
+                    Text(
+                        L(
+                            "While hidden, launch Pharos again to open Settings. The "
+                                + "app appears in the Dock only while this window is open."
+                        )
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+            }
+
+            /* The menu bar icon (and its Check for Updates item) can be
+               hidden, so the settings window offers the check too. */
+            Section(L("Updates")) {
+                LabeledContent(L("Version"), value: model.versionLabel)
+                Button(L("Check for Updates…")) {
+                    model.updater.checkForUpdates()
+                }
+                .disabled(!model.updater.canCheckForUpdates)
+            }
+        }
+        .formStyle(.grouped)
     }
 }
 
 // MARK: - Shortcuts pane
 
 /* One shortcut today: the Locked Awake trigger. */
-final class ShortcutsPaneViewController: NSViewController {
-    private var recorderButton: ShortcutRecorderButton?
+struct ShortcutSettingsView: View {
+    @ObservedObject var model: SettingsModel
 
-    override func loadView() {
-        let grid = NSGridView()
-        grid.rowSpacing = 10
-        grid.columnSpacing = 16
-        /* Labels and buttons have different intrinsic heights; align their
-           text baselines (the standard look for label + control rows). */
-        grid.rowAlignment = .firstBaseline
-
-        let label = NSTextField(labelWithString: "Lock Screen & Keep Awake")
-        let button = ShortcutRecorderButton(spec: LockShortcutStore.spec)
-        button.onChange = { spec in
-            LockShortcutStore.spec = spec
+    var body: some View {
+        Form {
+            Section {
+                LabeledContent(L("Lock Screen & Keep Awake")) {
+                    ShortcutRecorder()
+                        .fixedSize()
+                }
+                Button(L("Reset to Default")) {
+                    LockShortcutStore.reset()
+                }
+                .disabled(LockShortcutStore.spec == LockShortcutStore.defaultSpec)
+            } header: {
+                Text(L("Global shortcut"))
+            } footer: {
+                VStack(alignment: .leading, spacing: 6) {
+                    if !LockShortcutStore.isRegistered {
+                        Label(
+                            L("Another app is using this shortcut, so it won't lock the screen. Choose a different one."),
+                            systemImage: "exclamationmark.triangle.fill"
+                        )
+                        .foregroundStyle(.orange)
+                    }
+                    Text(
+                        L(
+                            "Covers the screen and keeps the Mac awake, no matter which app is "
+                                + "in front. Locking needs the Accessibility permission."))
+                }
+            }
         }
-        recorderButton = button
-        grid.addRow(with: [label, button])
-        grid.column(at: 0).xPlacement = .trailing
+        .formStyle(.grouped)
+    }
+}
 
-        let resetButton = NSButton(
-            title: "Reset to Default", target: self, action: #selector(resetToDefault))
-
-        let stack = NSStackView(views: [grid, resetButton])
-        stack.orientation = .vertical
-        stack.alignment = .centerX
-        stack.spacing = 16
-        stack.translatesAutoresizingMaskIntoConstraints = false
-
-        let container = NSView()
-        container.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(
-                equalTo: container.safeAreaLayoutGuide.topAnchor, constant: 20),
-            stack.centerXAnchor.constraint(equalTo: container.centerXAnchor),
-            stack.bottomAnchor.constraint(
-                lessThanOrEqualTo: container.bottomAnchor, constant: -20),
-        ])
-        view = container
+/* The AppKit recorder button, bridged: recording needs a local key-event
+   monitor and first-responder plumbing that SwiftUI has no vocabulary for. */
+private struct ShortcutRecorder: NSViewRepresentable {
+    func makeNSView(context: Context) -> ShortcutRecorderButton {
+        let button = ShortcutRecorderButton(spec: LockShortcutStore.spec)
+        button.onChange = { LockShortcutStore.spec = $0 }
+        return button
     }
 
-    @objc private func resetToDefault() {
-        LockShortcutStore.reset()
-        recorderButton?.spec = LockShortcutStore.spec
+    func updateNSView(_ button: ShortcutRecorderButton, context: Context) {
+        /* Reflect outside changes (Reset to Default), but never stomp the
+           "Type shortcut…" prompt mid-recording. */
+        if !button.isRecording, button.spec != LockShortcutStore.spec {
+            button.spec = LockShortcutStore.spec
+        }
     }
 }
 
@@ -490,7 +497,7 @@ final class ShortcutRecorderButton: NSButton {
     var onChange: ((ShortcutSpec) -> Void)?
 
     private var eventMonitor: Any?
-    private var isRecording = false
+    private(set) var isRecording = false
 
     init(spec: ShortcutSpec) {
         self.spec = spec
@@ -515,7 +522,7 @@ final class ShortcutRecorderButton: NSButton {
 
     private func beginRecording() {
         isRecording = true
-        title = "Type shortcut…"
+        title = L("Type shortcut…")
         NotificationCenter.default.post(name: .shortcutRecordingBegan, object: self)
 
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in

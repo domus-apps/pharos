@@ -95,6 +95,17 @@ enum LockShortcutStore {
         }
     }
 
+    /* Whether the shortcut is live. Registration fails when another app
+       already holds the combination exclusively; Settings says so. Posts
+       registrationChanged, not changed, which would re-register. */
+    static let registrationChanged = Notification.Name("Pharos.LockShortcutRegistrationChanged")
+    static var isRegistered = true {
+        didSet {
+            guard isRegistered != oldValue else { return }
+            NotificationCenter.default.post(name: registrationChanged, object: nil)
+        }
+    }
+
     static func reset() {
         UserDefaults.standard.removeObject(forKey: key)
         NotificationCenter.default.post(name: changed, object: nil)

@@ -37,6 +37,10 @@ final class LockScreenController {
     private var runLoopSource: CFRunLoopSource?
     private var isAuthenticating = false
     private var authContext: LAContext?
+    /* Each attempt gets a number so a result arriving after the attempt was
+       abandoned (see shieldInteraction) can't touch the next one. */
+    private var authAttempt = 0
+    private var authStartedAt = Date.distantPast
     private var shieldRebuild: DispatchWorkItem?
     private var observers: [any NSObjectProtocol] = []
 
@@ -65,6 +69,13 @@ final class LockScreenController {
         guard !isLocked else { return true }
         guard Self.hasPermission else { return false }
 
+        /* A modal alert (Pharos's secure-input warning, Sparkle's) would sit
+           hidden under the shields, and while it runs AppKit routes input
+           only to it: nothing on the black screen would respond. End it. */
+        if NSApp.modalWindow != nil {
+            NSApp.abortModal()
+        }
+
         buildShields()
         guard startTap() else {
             tearDownShields()
@@ -74,7 +85,7 @@ final class LockScreenController {
         awakeGuard.activate(keepingDisplayAwake: true)
         startUserActivityRefresh()
         installObservers()
-        NSApp.activate(ignoringOtherApps: true)
+        focusShield()
         NSCursor.setHiddenUntilMouseMoves(true)
 
         isLocked = true
@@ -104,14 +115,26 @@ final class LockScreenController {
 
     private func buildShields() {
         tearDownShields()
+        /* Mid-authentication the shields sit lowered under the dialog; a
+           rebuild then (a display plugged in) keeps that level. */
+        let level = isAuthenticating ? .statusBar : Self.shieldLevel
         for screen in NSScreen.screens {
             let shield = ShieldWindow(
                 screen: screen, showsHint: screen == NSScreen.screens.first)
-            shield.onInteraction = { [weak self] in self?.beginAuthentication() }
-            shield.level = Self.shieldLevel
+            shield.onInteraction = { [weak self] in self?.shieldInteraction() }
+            shield.level = level
             shield.orderFrontRegardless()
             shields.append(shield)
         }
+    }
+
+    /* Make Pharos active with a shield as key window. The event tap is the
+       main line of defense, but whenever it can't see keys (lifted for the
+       dialog, or blinded by secure input) they go to the active app's key
+       window: a shield, which swallows them, rather than the covered app. */
+    private func focusShield() {
+        NSApp.activate(ignoringOtherApps: true)
+        shields.first?.makeKey()
     }
 
     private func tearDownShields() {
@@ -195,7 +218,7 @@ final class LockScreenController {
         case .keyDown
         where [kVK_Return, kVK_Escape]
             .contains(Int(event.getIntegerValueField(.keyboardEventKeycode))):
-            DispatchQueue.main.async { [weak self] in self?.beginAuthentication() }
+            DispatchQueue.main.async { [weak self] in self?.shieldInteraction() }
             return nil
 
         default:
@@ -206,22 +229,47 @@ final class LockScreenController {
 
     // MARK: - Authentication
 
+    /* A click, Return, or Esc on the black screen. */
+    private func shieldInteraction() {
+        guard isLocked else { return }
+        guard isAuthenticating else {
+            beginAuthentication()
+            return
+        }
+        /* The dialog should be up and taking this input. Input reaching the
+           shield instead means it never appeared or vanished without
+           reporting back, and waiting on it would leave the screen dead for
+           good. Abandon it and open a fresh one. The grace period keeps the
+           press that opened the dialog (a double click) from cancelling it. */
+        guard Date().timeIntervalSince(authStartedAt) > 1.5 else { return }
+        NSLog("Pharos: input reached the shield mid-authentication; restarting it")
+        finishAuthentication(attempt: authAttempt, unlocked: false)
+        /* A beat for the old dialog to finish closing. */
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.beginAuthentication()
+        }
+    }
+
     private func beginAuthentication() {
         guard isLocked, !isAuthenticating else { return }
         isAuthenticating = true
+        authAttempt += 1
+        let attempt = authAttempt
+        authStartedAt = Date()
 
         /* The Touch ID / password dialog lives below the shielding level:
            drop the shields to just above normal windows and lift the tap so
            the user can type. Every exit path below restores both. */
         setShieldLevel(.statusBar)
         stopTap()
+        focusShield()
 
         let context = LAContext()
         authContext = context
         var error: NSError?
         guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {
             NSLog("Pharos: device owner authentication unavailable: \(String(describing: error))")
-            finishAuthentication(unlocked: false)
+            finishAuthentication(attempt: attempt, unlocked: false)
             return
         }
 
@@ -233,12 +281,13 @@ final class LockScreenController {
                     .deviceOwnerAuthentication,
                     localizedReason: "unlock the screen it is covering")) ?? false
             await MainActor.run { [weak self] in
-                self?.finishAuthentication(unlocked: unlocked)
+                self?.finishAuthentication(attempt: attempt, unlocked: unlocked)
             }
         }
     }
 
-    private func finishAuthentication(unlocked: Bool) {
+    private func finishAuthentication(attempt: Int, unlocked: Bool) {
+        guard isAuthenticating, attempt == authAttempt else { return }
         /* Invalidate explicitly, not just drop the reference: the password
            sheet is serviced by loginwindow, which holds session-wide secure
            input while it's up. A context torn down implicitly can leave that
@@ -271,16 +320,16 @@ final class LockScreenController {
             }
             NSLog("Pharos: secure input is stuck with loginwindow after unlock")
             let alert = NSAlert()
-            alert.messageText = "Keyboard monitoring is stuck"
-            alert.informativeText = """
+            alert.messageText = L("Keyboard monitoring is stuck")
+            alert.informativeText = L("""
                 macOS left its secure-input mode on after the unlock dialog, which \
                 blocks apps that listen for keys (brightness or input-source \
                 utilities, for example).
 
                 To clear it, lock the screen with Control-Command-Q and unlock it \
                 again.
-                """
-            alert.addButton(withTitle: "OK")
+                """)
+            alert.addButton(withTitle: L("OK"))
             NSApp.activate(ignoringOtherApps: true)
             alert.runModal()
         }
@@ -313,6 +362,7 @@ final class LockScreenController {
             unlock()
             return
         }
+        focusShield()
         NSCursor.setHiddenUntilMouseMoves(true)
     }
 
@@ -377,8 +427,12 @@ final class LockScreenController {
                 guard let self, self.isLocked else { return }
                 self.shieldRebuild?.cancel()
                 let work = DispatchWorkItem { [weak self] in
-                    guard let self, self.isLocked, !self.isAuthenticating else { return }
+                    guard let self, self.isLocked else { return }
                     self.buildShields()
+                    /* Mid-authentication the dialog keeps the focus. */
+                    if !self.isAuthenticating {
+                        self.focusShield()
+                    }
                 }
                 self.shieldRebuild = work
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: work)
@@ -397,13 +451,10 @@ final class LockScreenController {
 // MARK: - Shield window
 
 /* One black window covering one screen. Borderless windows refuse key
-   status by default; accepting it keeps the covered app frontmost so the
-   cursor stays hidden and clicks are unquestionably ours. */
+   status by default; accepting it lets a shield take the keyboard from the
+   covered app (see focusShield). */
 private final class ShieldWindow: NSWindow {
-    var onInteraction: (() -> Void)? {
-        get { (contentView as? ShieldView)?.onInteraction }
-        set { (contentView as? ShieldView)?.onInteraction = newValue }
-    }
+    var onInteraction: (() -> Void)?
 
     init(screen: NSScreen, showsHint: Bool) {
         super.init(
@@ -420,13 +471,27 @@ private final class ShieldWindow: NSWindow {
     }
 
     override var canBecomeKey: Bool { true }
+
+    /* Keep working under a modal session, in case one starts while locked. */
+    override var worksWhenModal: Bool { true }
+
+    /* Keys the event tap didn't get. Return and Esc unlock as they do
+       through the tap; everything else is swallowed without a beep. */
+    override func keyDown(with event: NSEvent) {
+        guard !event.isARepeat else { return }
+        if [kVK_Return, kVK_Escape].contains(Int(event.keyCode)) {
+            onInteraction?()
+        }
+    }
+
+    /* ⌘Q, ⌘W, ⌘, and the rest never reach the main menu. */
+    override func performKeyEquivalent(with event: NSEvent) -> Bool { true }
 }
 
 /* Black, with (on the main display) a barely-there lock glyph and hint —
    enough that a passer-by understands the machine is intentionally covered,
    quiet enough to disappear on an idle screen. */
 private final class ShieldView: NSView {
-    var onInteraction: (() -> Void)?
     private let showsHint: Bool
 
     init(showsHint: Bool) {
@@ -437,12 +502,12 @@ private final class ShieldView: NSView {
         guard showsHint else { return }
 
         let glyph = NSImageView(
-            image: NSImage(systemSymbolName: "lock.fill", accessibilityDescription: "locked")?
+            image: NSImage(systemSymbolName: "lock.fill", accessibilityDescription: L("Locked"))?
                 .withSymbolConfiguration(.init(pointSize: 26, weight: .regular)) ?? NSImage())
         glyph.contentTintColor = NSColor.white.withAlphaComponent(0.22)
 
         let hint = NSTextField(
-            labelWithString: "Press Return, Esc, or click — Touch ID or password to unlock")
+            labelWithString: L("Press Return, Esc, or click — Touch ID or password to unlock"))
         hint.font = .systemFont(ofSize: 13)
         hint.textColor = NSColor.white.withAlphaComponent(0.25)
 
@@ -462,7 +527,10 @@ private final class ShieldView: NSView {
         fatalError("init(coder:) is not supported")
     }
 
+    /* The first click counts even when Pharos isn't the active app. */
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
     override func mouseDown(with event: NSEvent) {
-        onInteraction?()
+        (window as? ShieldWindow)?.onInteraction?()
     }
 }

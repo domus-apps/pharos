@@ -8,10 +8,17 @@
 		<string>잠자기 방지</string>
 		<string>keep awake</string>
 	</array>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
 	<key>CFBundleExecutable</key>
 	<string>Pharos</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.jhaemin.pharos</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>ko</string>
+	</array>
 	<key>CFBundleName</key>
 	<string>Pharos</string>
 	<key>CFBundlePackageType</key>

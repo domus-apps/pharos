@@ -42,6 +42,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             self?.registerLockHotKey()
         }
 
+        /* Timers don't count time asleep (a closed lid sleeps the Mac
+           whatever the assertion says), so a timed keep-awake would run long
+           by however long the Mac slept. Re-aim at the deadline on wake. */
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.scheduleExpiryTimer()
+        }
+
         if AppPreferences.activatesOnLaunch {
             setAwake(true)
         }
@@ -77,6 +86,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         lockScreen.teardown()
     }
 
+    /* Quitting uncovers a locked screen, so ⌘Q (or the menu) at the Mac
+       itself must not work while locked. Quits from outside the app still
+       go through: logout, restart, and shutdown, a script, Activity
+       Monitor. They all arrive as a quit Apple event, from someone already
+       in the session, the same footing as `pkill`. */
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard lockScreen.isLocked else { return .terminateNow }
+        let event = NSAppleEventManager.shared().currentAppleEvent
+        return event?.eventID == AEEventID(kAEQuitApplication) ? .terminateNow : .terminateCancel
+    }
+
     /* Launching the app again while it's already running sends "reopen" to
        the live instance. With the menu bar icon hidden this is the only way
        back into the UI, so surface Settings (which also puts the app in the
@@ -104,16 +124,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             sleepGuard.activate(keepingDisplayAwake: AppPreferences.keepsDisplayAwake)
             if sleepGuard.isActive, let duration {
                 expiryDate = Date(timeIntervalSinceNow: duration)
-                let timer = Timer(timeInterval: duration, repeats: false) { [weak self] _ in
-                    self?.setAwake(false)
-                }
-                RunLoop.main.add(timer, forMode: .common)
-                expiryTimer = timer
+                scheduleExpiryTimer()
             }
         } else {
             sleepGuard.deactivate()
         }
         updateStatusIcon()
+    }
+
+    /* Fires at expiryDate, measured from now: called when a timed
+       keep-awake starts and again after every wake. */
+    private func scheduleExpiryTimer() {
+        expiryTimer?.invalidate()
+        expiryTimer = nil
+        guard let expiryDate else { return }
+        let remaining = expiryDate.timeIntervalSinceNow
+        guard remaining > 0 else {
+            setAwake(false)
+            return
+        }
+        let timer = Timer(timeInterval: remaining, repeats: false) { [weak self] _ in
+            self?.setAwake(false)
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        expiryTimer = timer
     }
 
     @objc private func toggleAwake() {
@@ -158,7 +192,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if lockScreen.isLocked {
             statusItem?.button?.image = NSImage(
                 systemSymbolName: "lock.fill",
-                accessibilityDescription: "Pharos — screen locked, keeping the Mac awake")
+                accessibilityDescription: L("Pharos — screen locked, keeping the Mac awake"))
             return
         }
         let style = AppPreferences.menuBarIconStyle
@@ -166,7 +200,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             systemSymbolName: sleepGuard.isActive
                 ? style.activeSymbolName : style.idleSymbolName,
             accessibilityDescription: sleepGuard.isActive
-                ? "Pharos — keeping the Mac awake" : "Pharos"
+                ? L("Pharos — keeping the Mac awake") : "Pharos"
         )
     }
 
@@ -175,10 +209,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func registerLockHotKey() {
         hotKeys.unregisterAll()
         let spec = LockShortcutStore.spec
-        hotKeys.register(keyCode: spec.keyCode, modifiers: spec.carbonModifiers) {
-            [weak self] in
+        let registered = hotKeys.register(
+            keyCode: spec.keyCode, modifiers: spec.carbonModifiers
+        ) { [weak self] in
             self?.lockScreenKeepingAwake()
         }
+        if !registered {
+            NSLog("Pharos: could not register the lock shortcut \(spec.displayString)")
+        }
+        LockShortcutStore.isRegistered = registered
     }
 
     @objc private func lockScreenKeepingAwake() {
@@ -197,14 +236,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
        explain that at the moment it matters, not before. */
     private func showLockPermissionAlert() {
         let alert = NSAlert()
-        alert.messageText = "Locking needs Accessibility access"
-        alert.informativeText =
+        alert.messageText = L("Locking needs Accessibility access")
+        alert.informativeText = L(
             "To cover the screen, Pharos must swallow keyboard shortcuts like "
-            + "⌘Tab — macOS calls that capability Accessibility. Allow Pharos "
-            + "under Privacy & Security › Accessibility, then lock again. "
-            + "Everything else in Pharos keeps working without it."
-        alert.addButton(withTitle: "Open Privacy & Security Settings…")
-        alert.addButton(withTitle: "Cancel")
+                + "⌘Tab — macOS calls that capability Accessibility. Allow Pharos "
+                + "under Privacy & Security › Accessibility, then lock again. "
+                + "Everything else in Pharos keeps working without it.")
+        alert.addButton(withTitle: L("Open Privacy & Security Settings…"))
+        alert.addButton(withTitle: L("Cancel"))
         NSApp.activate(ignoringOtherApps: true)
         if alert.runModal() == .alertFirstButtonReturn,
             let url = URL(
@@ -241,7 +280,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
 
         let toggle = NSMenuItem(
-            title: "Keep Mac Awake", action: #selector(toggleAwake), keyEquivalent: "")
+            title: L("Keep Mac Awake"), action: #selector(toggleAwake), keyEquivalent: "")
         toggle.target = self
         toggle.state = sleepGuard.isActive ? .on : .off
         menu.addItem(toggle)
@@ -249,7 +288,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if sleepGuard.isActive, let expiryDate {
             let label = AwakeCountdown.remainingLabel(
                 seconds: expiryDate.timeIntervalSinceNow)
-            menu.addItem(NSMenuItem(title: "Off in \(label)", action: nil, keyEquivalent: ""))
+            menu.addItem(NSMenuItem(title: L("Off in %@", label), action: nil, keyEquivalent: ""))
         }
 
         let durations = NSMenu()
@@ -260,14 +299,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             durationItem.tag = duration.rawValue
             durations.addItem(durationItem)
         }
-        let durationsItem = NSMenuItem(title: "Keep Awake For", action: nil, keyEquivalent: "")
+        let durationsItem = NSMenuItem(title: L("Keep Awake For"), action: nil, keyEquivalent: "")
         durationsItem.submenu = durations
         menu.addItem(durationsItem)
 
         menu.addItem(.separator())
         let shortcut = LockShortcutStore.spec.menuKeyEquivalent
         let lockItem = NSMenuItem(
-            title: "Lock Screen & Keep Awake", action: #selector(lockScreenKeepingAwake),
+            title: L("Lock Screen & Keep Awake"), action: #selector(lockScreenKeepingAwake),
             keyEquivalent: shortcut.key)
         lockItem.keyEquivalentModifierMask = shortcut.modifiers
         lockItem.target = self
@@ -275,13 +314,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         menu.addItem(.separator())
         let settingsItem = NSMenuItem(
-            title: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
+            title: L("Settings…"), action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.target = self
         menu.addItem(settingsItem)
         menu.addItem(updater.makeMenuItem())
         menu.addItem(.separator())
         menu.addItem(
-            NSMenuItem(title: "Quit Pharos", action: #selector(quit), keyEquivalent: "q"))
+            NSMenuItem(title: L("Quit Pharos"), action: #selector(quit), keyEquivalent: "q"))
 
         item.menu = menu
         item.button?.performClick(nil)
@@ -300,24 +339,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func setUpMainMenu() {
         let appMenu = NSMenu()
         let settingsItem = NSMenuItem(
-            title: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
+            title: L("Settings…"), action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.target = self
         appMenu.addItem(settingsItem)
         appMenu.addItem(updater.makeMenuItem())
         appMenu.addItem(.separator())
         appMenu.addItem(
             NSMenuItem(
-                title: "Quit Pharos",
+                title: L("Quit Pharos"),
                 action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
-        let windowMenu = NSMenu(title: "Window")
+        let windowMenu = NSMenu(title: L("Window"))
         windowMenu.addItem(
             NSMenuItem(
-                title: "Close Window",
+                title: L("Close Window"),
                 action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w"))
         windowMenu.addItem(
             NSMenuItem(
-                title: "Minimize",
+                title: L("Minimize"),
                 action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m"))
 
         let mainMenu = NSMenu()

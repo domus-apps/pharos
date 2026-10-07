@@ -12,10 +12,10 @@ enum MenuBarIconStyle: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .beacon: "Beacon"
-        case .sun: "Sun"
-        case .eye: "Eye"
-        case .cup: "Coffee Cup"
+        case .beacon: L("Beacon")
+        case .sun: L("Sun")
+        case .eye: L("Eye")
+        case .cup: L("Coffee Cup")
         }
     }
 
