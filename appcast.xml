@@ -308,5 +308,77 @@
         sparkle:edSignature="9aT68/vYSl7rydpQqz7sxRBeaCUAhmOKjrYcdKyQqVHFjTEsRpMP5A9eb6VNewGyd+UznGxr89NKCZYLRZTcDw==" length="3403087"
         type="application/octet-stream"/>
     </item>
+    <item>
+      <title>Pharos v1.3.0</title>
+      <link>https://github.com/domus-apps/pharos/releases/tag/v1.3.0</link>
+      <pubDate>Wed, 07 Oct 2026 02:00:24 +0000</pubDate>
+      <description xml:lang="en"><![CDATA[
+<h2>1.3.0</h2>
+<h3>Added</h3>
+<ul>
+<li>Pharos is available in Korean. The menu, Settings, and welcome window follow the macOS language.</li>
+<li>Settings shows a warning when another app is already using the lock shortcut.</li>
+</ul>
+<h3>Changed</h3>
+<ul>
+<li>Settings uses the system's grouped style, with section headers and rounded boxes like Xcode's settings.</li>
+</ul>
+<h3>Fixed</h3>
+<ul>
+<li>The locked screen could stop responding to clicks and keys, leaving no way to unlock it.</li>
+<li>Pharos could be quit from the keyboard while the screen was locked, uncovering the screen.</li>
+<li>Keys typed while the unlock dialog was opening could reach the app behind the locked screen.</li>
+<li>A display connected while unlocking was left uncovered.</li>
+<li>The first click on the locked screen sometimes did nothing.</li>
+<li>A timed keep-awake ended late if the Mac had slept in the meantime.</li>
+</ul>
+<h2>1.2.5</h2>
+<h3>Fixed</h3>
+<ul>
+<li>The Settings window could no longer be dragged after a switch in it was flipped.</li>
+</ul>
+<h2>1.2.4</h2>
+<h3>Fixed</h3>
+<ul>
+<li>The app icon's background looked flat in the Dock and Finder. It now shows its gradient.</li>
+</ul>      ]]></description>
+      <description xml:lang="ko"><![CDATA[
+<h2>1.3.0</h2>
+<h3>추가</h3>
+<ul>
+<li>한국어를 지원합니다. macOS 언어가 한국어이면 메뉴, 설정, 환영 화면이 한국어로 표시됩니다.</li>
+<li>화면 잠금 단축키를 다른 앱이 이미 쓰고 있으면 설정에 경고가 표시됩니다.</li>
+</ul>
+<h3>변경</h3>
+<ul>
+<li>설정 창을 Xcode 설정처럼 섹션 제목과 둥근 상자로 나뉜 시스템 스타일로 바꿨습니다.</li>
+</ul>
+<h3>수정</h3>
+<ul>
+<li>잠긴 화면이 클릭과 키 입력에 반응하지 않아 잠금을 풀 수 없게 되던 문제를 수정했습니다.</li>
+<li>화면이 잠긴 동안 키보드로 Pharos를 종료해 화면을 드러낼 수 있던 문제를 수정했습니다.</li>
+<li>잠금 해제 창이 뜨는 동안 입력한 키가 가려진 앱으로 전달될 수 있던 문제를 수정했습니다.</li>
+<li>잠금을 해제하는 도중 연결한 디스플레이가 가려지지 않던 문제를 수정했습니다.</li>
+<li>잠긴 화면을 처음 클릭하면 반응하지 않을 때가 있던 문제를 수정했습니다.</li>
+<li>시간을 정해 둔 잠자기 방지가 중간에 Mac이 잠들었다 깨어나면 늦게 꺼지던 문제를 수정했습니다.</li>
+</ul>
+<h2>1.2.5</h2>
+<h3>수정</h3>
+<ul>
+<li>설정 창의 스위치를 켜거나 끈 뒤 창을 끌어 옮길 수 없던 문제를 수정했습니다.</li>
+</ul>
+<h2>1.2.4</h2>
+<h3>수정</h3>
+<ul>
+<li>Dock과 Finder에서 앱 아이콘 배경이 평면으로 보이던 문제를 고쳤습니다.</li>
+</ul>      ]]></description>
+      <sparkle:version>11</sparkle:version>
+      <sparkle:shortVersionString>1.3.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+      <enclosure
+        url="https://github.com/domus-apps/pharos/releases/download/v1.3.0/Pharos.zip"
+        sparkle:edSignature="lWOM+axuRYpSLUe1aPQMgG5+ZeeMBPp7xqqdYL1xka01veop9WxQs0SPfnLymmVwg7L27t6tFmz+hNs4gdyBCA==" length="3433871"
+        type="application/octet-stream"/>
+    </item>
   </channel>
 </rss>
