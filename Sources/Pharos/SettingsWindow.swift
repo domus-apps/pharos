@@ -438,10 +438,11 @@ struct ShortcutSettingsView: View {
         Form {
             Section {
                 LabeledContent(L("Lock Screen & Keep Awake")) {
-                    ShortcutRecorder()
+                    ShortcutRecorder(spec: LockShortcutStore.spec)
                         .fixedSize()
                 }
                 Button(L("Reset to Default")) {
+                    ShortcutRecorderButton.cancelActiveRecording()
                     LockShortcutStore.reset()
                 }
                 .disabled(LockShortcutStore.spec == LockShortcutStore.defaultSpec)
@@ -470,8 +471,13 @@ struct ShortcutSettingsView: View {
 /* The AppKit recorder button, bridged: recording needs a local key-event
    monitor and first-responder plumbing that SwiftUI has no vocabulary for. */
 private struct ShortcutRecorder: NSViewRepresentable {
+    /* Passed in by value: a representable with no inputs never sees a
+       change, so SwiftUI skips updateNSView and Reset to Default would
+       leave the button showing the old shortcut. */
+    let spec: ShortcutSpec
+
     func makeNSView(context: Context) -> ShortcutRecorderButton {
-        let button = ShortcutRecorderButton(spec: LockShortcutStore.spec)
+        let button = ShortcutRecorderButton(spec: spec)
         button.onChange = { LockShortcutStore.spec = $0 }
         return button
     }
@@ -479,8 +485,8 @@ private struct ShortcutRecorder: NSViewRepresentable {
     func updateNSView(_ button: ShortcutRecorderButton, context: Context) {
         /* Reflect outside changes (Reset to Default), but never stomp the
            "Type shortcut…" prompt mid-recording. */
-        if !button.isRecording, button.spec != LockShortcutStore.spec {
-            button.spec = LockShortcutStore.spec
+        if !button.isRecording, button.spec != spec {
+            button.spec = spec
         }
     }
 }
@@ -497,7 +503,19 @@ final class ShortcutRecorderButton: NSButton {
     var onChange: ((ShortcutSpec) -> Void)?
 
     private var eventMonitor: Any?
+    private var endObservers: [NSObjectProtocol] = []
     private(set) var isRecording = false
+
+    /* One recording at a time, app-wide. Starting another recorder (or
+       resetting) ends the current one first, so the hotkeys suspended for
+       it come back before the next suspension, never after, and a reset
+       can't land behind the "Type shortcut…" prompt only to be painted
+       over with the old shortcut when the prompt is cancelled. */
+    private static weak var activeRecorder: ShortcutRecorderButton?
+
+    static func cancelActiveRecording() {
+        activeRecorder?.finishRecording(with: nil)
+    }
 
     init(spec: ShortcutSpec) {
         self.spec = spec
@@ -521,9 +539,24 @@ final class ShortcutRecorderButton: NSButton {
     }
 
     private func beginRecording() {
+        Self.cancelActiveRecording()
         isRecording = true
+        Self.activeRecorder = self
         title = L("Type shortcut…")
         NotificationCenter.default.post(name: .shortcutRecordingBegan, object: self)
+
+        /* Closing Settings (the window is kept, so the button never leaves
+           it) or switching to another app would otherwise leave the hotkeys
+           suspended until the recorder is clicked again. */
+        let center = NotificationCenter.default
+        endObservers = [
+            center.addObserver(
+                forName: NSWindow.willCloseNotification, object: window, queue: .main
+            ) { [weak self] _ in self?.finishRecording(with: nil) },
+            center.addObserver(
+                forName: NSApplication.didResignActiveNotification, object: nil, queue: .main
+            ) { [weak self] _ in self?.finishRecording(with: nil) },
+        ]
 
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self else { return event }
@@ -552,7 +585,10 @@ final class ShortcutRecorderButton: NSButton {
             NSEvent.removeMonitor(eventMonitor)
             self.eventMonitor = nil
         }
+        endObservers.forEach(NotificationCenter.default.removeObserver)
+        endObservers = []
         isRecording = false
+        if Self.activeRecorder === self { Self.activeRecorder = nil }
         if let newSpec {
             spec = newSpec
             onChange?(newSpec)
